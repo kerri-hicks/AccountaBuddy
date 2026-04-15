@@ -15,6 +15,11 @@ class GoalCreate
         $userId  = $interaction['member']['user']['id'] ?? $interaction['user']['id'] ?? '';
         $guildId = $interaction['guild_id'] ?? '';
 
+        // Personality and cadence come from the modal custom_id: goal_create:{personality}:{cadence}
+        $customIdParts = explode(':', $interaction['data']['custom_id'] ?? '', 3);
+        $personality   = $customIdParts[1] ?? '';
+        $cadenceRaw    = $customIdParts[2] ?? '';
+
         $components = $interaction['data']['components'] ?? [];
         $fields = [];
         foreach ($components as $row) {
@@ -25,25 +30,28 @@ class GoalCreate
 
         $name        = trim($fields['goal_name'] ?? '');
         $description = trim($fields['goal_description'] ?? '') ?: null;
-        $cadenceRaw  = strtolower(trim($fields['goal_cadence'] ?? ''));
         $timeRaw     = trim($fields['goal_checkin_time'] ?? '');
-        $persRaw     = strtolower(trim($fields['goal_personality'] ?? ''));
 
         // Validate name
         if ($name === '') {
             return self::ephemeral("Goal name cannot be empty.");
         }
 
-        // Parse personality
-        $personality = self::parsePersonality($persRaw);
-        if (!$personality) {
-            return self::ephemeral("Invalid personality. Choose: `hype`, `dry`, `sarcastic`, or `harsh`.");
+        // Validate personality from custom_id
+        $validPersonalities = [
+            Types::PERSONALITY_HYPE,
+            Types::PERSONALITY_DRY,
+            Types::PERSONALITY_SARCASTIC,
+            Types::PERSONALITY_HARSH,
+        ];
+        if (!in_array($personality, $validPersonalities, true)) {
+            return self::ephemeral("Something went wrong with the personality selection. Please try again.");
         }
 
-        // Parse cadence
+        // Parse cadence from custom_id
         [$cadenceType, $cadenceTarget] = self::parseCadence($cadenceRaw);
         if (!$cadenceType) {
-            return self::ephemeral("Invalid cadence. Use: `daily`, `one-time`, `weekly-1` through `weekly-7`, or `monthly-1` through `monthly-30`.");
+            return self::ephemeral("Something went wrong with the cadence selection. Please try again.");
         }
 
         // Parse time (HH:MM)
@@ -93,16 +101,16 @@ class GoalCreate
         if ($cadenceType !== Types::CADENCE_ONE_TIME) {
             $cycleEnd = self::cycleEndDate($cadenceType, date('Y-m-d'));
             Database::insert('cycles', [
-                'goal_id'    => $goalId,
-                'start_date' => date('Y-m-d'),
-                'end_date'   => $cycleEnd,
-                'target'     => $cadenceTarget,
+                'goal_id'     => $goalId,
+                'start_date'  => date('Y-m-d'),
+                'end_date'    => $cycleEnd,
+                'target'      => $cadenceTarget,
                 'completions' => 0,
-                'status'     => Types::CYCLE_ACTIVE,
+                'status'      => Types::CYCLE_ACTIVE,
             ]);
         }
 
-        // Post publicly in accountability channel
+        // Post public announcement in accountability channel
         $config = Database::fetch("SELECT * FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
         if ($config) {
             $personalityLabel = match ($personality) {
@@ -113,15 +121,15 @@ class GoalCreate
             };
             $cadenceLabel = \AccountaBuddy\Handlers\Commands\GoalList::formatCadence($cadenceType, $cadenceTarget);
 
+            $descLine = $description ? "\n> _{$description}_" : '';
             $lines = [
-                "📋 **New goal from {$displayName}!**",
-                "**{$name}**" . ($description ? "\n_{$description}_" : ''),
-                "Cadence: {$cadenceLabel} | Personality: {$personalityLabel}",
-                "Check-in time: {$checkinTime} UTC",
+                "🎯 **New goal from <@{$userId}>!**",
+                "> **{$name}**{$descLine}",
+                "",
+                "📅 **Cadence:** {$cadenceLabel}",
+                "🤖 **Accountability style:** {$personalityLabel}",
+                "⏰ **Check-ins at:** {$checkinTime} UTC",
             ];
-            if ($cadenceType !== Types::CADENCE_ONE_TIME) {
-                $lines[] = "_Note: 'monthly' cycles are always 30 days, never a calendar month._";
-            }
 
             Api::sendMessage($config['accountability_channel_id'], ['content' => implode("\n", $lines)]);
         }
@@ -135,21 +143,10 @@ class GoalCreate
         ];
     }
 
-    private static function parsePersonality(string $raw): ?string
-    {
-        return match ($raw) {
-            'hype', 'hype_coach', 'hypecoach'         => Types::PERSONALITY_HYPE,
-            'dry', 'dry_colleague', 'drycolleague'     => Types::PERSONALITY_DRY,
-            'sarcastic', 'sarcastic_friend'            => Types::PERSONALITY_SARCASTIC,
-            'harsh', 'harsh_critic', 'harshcritic'     => Types::PERSONALITY_HARSH,
-            default                                     => null,
-        };
-    }
-
     private static function parseCadence(string $raw): array
     {
-        if ($raw === 'daily')    return [Types::CADENCE_DAILY, 1];
-        if ($raw === 'one-time' || $raw === 'one_time' || $raw === 'onetime') return [Types::CADENCE_ONE_TIME, 1];
+        if ($raw === 'daily')                                  return [Types::CADENCE_DAILY, 1];
+        if ($raw === 'one_time' || $raw === 'one-time')        return [Types::CADENCE_ONE_TIME, 1];
 
         if (preg_match('/^weekly-(\d+)$/', $raw, $m)) {
             $n = (int)$m[1];
