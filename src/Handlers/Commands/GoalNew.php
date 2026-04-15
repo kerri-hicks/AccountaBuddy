@@ -30,72 +30,42 @@ class GoalNew
             ];
         }
 
-        // Return modal
+        // Step 1: show personality select
         return [
-            'type' => Types::MODAL,
+            'type' => Types::CHANNEL_MESSAGE_WITH_SOURCE,
             'data' => [
-                'custom_id' => 'goal_create',
-                'title'     => 'Create a New Goal',
-                'components' => [
-                    [
-                        'type'       => Types::COMPONENT_ACTION_ROW,
-                        'components' => [[
-                            'type'        => Types::COMPONENT_TEXT_INPUT,
-                            'custom_id'   => 'goal_name',
-                            'label'       => 'Goal name',
-                            'style'       => Types::TEXT_SHORT,
-                            'required'    => true,
-                            'max_length'  => 80,
-                            'placeholder' => "Keep it short and specific. e.g. 'Run 2 miles' or 'Practice guitar'",
-                        ]],
-                    ],
-                    [
-                        'type'       => Types::COMPONENT_ACTION_ROW,
-                        'components' => [[
-                            'type'        => Types::COMPONENT_TEXT_INPUT,
-                            'custom_id'   => 'goal_description',
-                            'label'       => 'Description (optional)',
-                            'style'       => Types::TEXT_PARAGRAPH,
-                            'required'    => false,
-                            'max_length'  => 500,
-                        ]],
-                    ],
-                    [
-                        'type'       => Types::COMPONENT_ACTION_ROW,
-                        'components' => [[
-                            'type'        => Types::COMPONENT_TEXT_INPUT,
-                            'custom_id'   => 'goal_cadence',
-                            'label'       => 'Cadence',
-                            'style'       => Types::TEXT_SHORT,
-                            'required'    => true,
-                            'placeholder' => 'daily | weekly-1 | weekly-2 | weekly-3 | monthly-1 | monthly-X | one-time',
-                        ]],
-                    ],
-                    [
-                        'type'       => Types::COMPONENT_ACTION_ROW,
-                        'components' => [[
-                            'type'        => Types::COMPONENT_TEXT_INPUT,
-                            'custom_id'   => 'goal_checkin_time',
-                            'label'       => 'Check-in time (HH:MM, 24h UTC)',
-                            'style'       => Types::TEXT_SHORT,
-                            'required'    => true,
-                            'placeholder' => 'e.g. 08:00 — all times are UTC',
-                            'max_length'  => 5,
-                        ]],
-                    ],
-                    [
-                        'type'       => Types::COMPONENT_ACTION_ROW,
-                        'components' => [[
-                            'type'        => Types::COMPONENT_TEXT_INPUT,
-                            'custom_id'   => 'goal_personality',
-                            'label'       => 'Personality (cannot change later)',
-                            'style'       => Types::TEXT_SHORT,
-                            'required'    => true,
-                            'placeholder' => 'hype | dry | sarcastic | harsh',
-                            'max_length'  => 20,
-                        ]],
-                    ],
-                ],
+                'flags'   => Types::FLAG_EPHEMERAL,
+                'content' => "**Step 1 of 3 — Choose a personality for this goal.**\n_This cannot be changed later._",
+                'components' => [[
+                    'type'       => Types::COMPONENT_ACTION_ROW,
+                    'components' => [[
+                        'type'        => Types::COMPONENT_STRING_SELECT,
+                        'custom_id'   => 'personality_select',
+                        'placeholder' => 'Choose a personality...',
+                        'options'     => [
+                            [
+                                'label'       => '🔥📣 Hype Coach',
+                                'value'       => Types::PERSONALITY_HYPE,
+                                'description' => 'I believe in you unconditionally.',
+                            ],
+                            [
+                                'label'       => '📈📊 Dry Colleague',
+                                'value'       => Types::PERSONALITY_DRY,
+                                'description' => "I'm tracking this. Results pending.",
+                            ],
+                            [
+                                'label'       => '👀🦊 Sarcastic Friend',
+                                'value'       => Types::PERSONALITY_SARCASTIC,
+                                'description' => 'Oh wow, you actually did it. Bold.',
+                            ],
+                            [
+                                'label'       => '🗿💀 Harsh Critic',
+                                'value'       => Types::PERSONALITY_HARSH,
+                                'description' => 'There is no winning with this one.',
+                            ],
+                        ],
+                    ]],
+                ]],
             ],
         ];
     }
