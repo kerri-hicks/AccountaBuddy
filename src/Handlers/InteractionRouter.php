@@ -42,7 +42,7 @@ class InteractionRouter
         $sub  = $this->interaction['data']['options'][0]['name'] ?? '';
 
         return match ($name) {
-            'goal-abuddy', 'goal-ABuddy' => match ($sub) {
+            'goal-abuddy' => match ($sub) {
                 'new'    => GoalNew::handle($this->interaction),
                 'list'   => GoalList::handle($this->interaction),
                 'view'   => GoalView::handle($this->interaction),
