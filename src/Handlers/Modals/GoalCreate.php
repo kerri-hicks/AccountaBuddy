@@ -113,21 +113,15 @@ class GoalCreate
         // Post public announcement in accountability channel
         $config = Database::fetch("SELECT * FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
         if ($config) {
-            $personalityLabel = match ($personality) {
-                Types::PERSONALITY_HYPE      => '🔥📣 Hype Coach',
-                Types::PERSONALITY_DRY       => '📈📊 Dry Colleague',
-                Types::PERSONALITY_SARCASTIC => '👀🦊 Sarcastic Friend',
-                Types::PERSONALITY_HARSH     => '🗿💀 Harsh Critic',
-            };
             $cadenceLabel = \AccountaBuddy\Handlers\Commands\GoalList::formatCadence($cadenceType, $cadenceTarget);
 
             $descLine = $description ? "\n> _{$description}_" : '';
             $lines = [
-                "🎯 **New goal from <@{$userId}>!**",
+                \AccountaBuddy\Messages\Library::milesHeader(),
+                "🎯 **New goal just dropped from <@{$userId}>!**",
                 "> **{$name}**{$descLine}",
                 "",
                 "📅 **Cadence:** {$cadenceLabel}",
-                "🤖 **Accountability style:** {$personalityLabel}",
                 "⏰ **Check-ins at:** {$checkinTime} UTC",
             ];
 
