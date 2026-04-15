@@ -41,7 +41,7 @@ class GoalNew
                     'components' => [[
                         'type'        => Types::COMPONENT_STRING_SELECT,
                         'custom_id'   => 'personality_select',
-                        'placeholder' => 'Choose a personality...',
+                        'placeholder' => 'Pick your accountability style...',
                         'options'     => [
                             [
                                 'label'       => '🔥📣 Hype Coach',
