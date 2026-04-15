@@ -21,6 +21,7 @@ use AccountaBuddy\Handlers\Buttons\EarlyCycle;
 use AccountaBuddy\Handlers\Buttons\Appeal;
 use AccountaBuddy\Handlers\Buttons\Hold;
 use AccountaBuddy\Handlers\Buttons\CancelConfirm;
+use AccountaBuddy\Handlers\Buttons\GoalSetup;
 
 class InteractionRouter
 {
@@ -101,6 +102,12 @@ class InteractionRouter
             $action === 'cancel_goal'
                 => CancelConfirm::handle($this->interaction, 'cancel_confirm', $param1),
 
+            // Goal creation multi-step selects
+            $action === 'personality_select'
+                => GoalSetup::handlePersonalitySelect($this->interaction),
+            $action === 'cadence_select'
+                => GoalSetup::handleCadenceSelect($this->interaction, $param1),
+
             default => $this->unknown(),
         };
     }
@@ -109,10 +116,11 @@ class InteractionRouter
     {
         $customId = $this->interaction['data']['custom_id'] ?? '';
 
-        return match ($customId) {
-            'goal_create' => GoalCreate::handle($this->interaction),
-            default       => $this->unknown(),
-        };
+        if (str_starts_with($customId, 'goal_create')) {
+            return GoalCreate::handle($this->interaction);
+        }
+
+        return $this->unknown();
     }
 
     private function unknown(): array
