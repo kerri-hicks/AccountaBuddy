@@ -23,6 +23,9 @@ class Types
     // Message flags
     const FLAG_EPHEMERAL = 64;
 
+    // Miles — the AccountaBuddy emcee
+    const MILES_EMOJI = '🤹🏼';
+
     // Component types
     const COMPONENT_ACTION_ROW   = 1;
     const COMPONENT_BUTTON       = 2;
