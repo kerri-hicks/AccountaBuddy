@@ -554,15 +554,20 @@ class Library
      * @param string $event        e.g. 'win', 'miss', 'milestone', etc.
      * @param array  $vars         Associative array: ['name' => ..., 'goal' => ..., 'N' => ..., 'streak' => ...]
      */
+    public static function milesHeader(): string
+    {
+        return Types::MILES_EMOJI . ' **Miles**';
+    }
+
     public static function get(string $personality, string $event, array $vars = []): string
     {
         $pool = self::$messages[$personality][$event] ?? null;
         if (!$pool) {
-            return "Check-in recorded for {$vars['name']}.";
+            return self::milesHeader() . "\nCheck-in recorded for {$vars['name']}.";
         }
 
         $message = $pool[array_rand($pool)];
-        return self::substitute($message, $vars);
+        return self::milesHeader() . "\n" . self::substitute($message, $vars);
     }
 
     private static function substitute(string $template, array $vars): string
