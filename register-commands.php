@@ -26,7 +26,7 @@ $appId    = Config::appId();
 
 $commands = [
     [
-        'name'        => 'goal-ABuddy',
+        'name'        => 'goal-abuddy',
         'description' => 'Manage your AccountaBuddy goals',
         'options'     => [
             [
