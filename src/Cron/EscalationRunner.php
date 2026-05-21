@@ -146,7 +146,9 @@ class EscalationRunner
                 ];
 
                 // Post miss message
-                $missMsg = Library::get($checkin['personality'], 'miss', $vars);
+                $cadenceLabel = self::cadenceLabel($checkin['cadence_type']);
+                $prefix = "**{$vars['name']}** missed {$cadenceLabel} check-in for **{$vars['goal']}**.";
+                $missMsg = $prefix . "\n" . Library::get($checkin['personality'], 'miss', $vars);
                 Api::sendMessage($checkin['accountability_channel_id'], ['content' => $missMsg]);
 
                 // Also post streak break if they had a streak
@@ -232,5 +234,16 @@ class EscalationRunner
         } catch (\Throwable $e) {
             error_log("Failed to send hold DM to {$checkin['user_id']}: " . $e->getMessage());
         }
+    }
+
+    private static function cadenceLabel(string $cadenceType): string
+    {
+        return match ($cadenceType) {
+            Types::CADENCE_WEEKLY_ONCE,
+            Types::CADENCE_WEEKLY_X     => "this week's",
+            Types::CADENCE_MONTHLY_ONCE,
+            Types::CADENCE_MONTHLY_X    => "this month's",
+            default                     => "today's",
+        };
     }
 }

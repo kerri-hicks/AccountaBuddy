@@ -78,7 +78,10 @@ class CheckIn
         // Post public win message
         if ($channelId) {
             $event = $isComeback ? 'comeback' : 'win';
-            $msg   = Library::get($goal['personality'], $event, $vars);
+            $prefix = $isComeback
+                ? "**{$displayName}** completed today's check-in for **{$goal['name']}** — back after a miss!"
+                : "**{$displayName}** completed " . self::cadenceLabel($goal['cadence_type']) . " check-in for **{$goal['name']}**.";
+            $msg   = $prefix . "\n" . Library::get($goal['personality'], $event, $vars);
             Api::sendMessage($channelId, ['content' => $msg]);
 
             // Check overachiever: hit target this cycle?
@@ -162,7 +165,8 @@ class CheckIn
         );
 
         if ($channelId) {
-            $msg = Library::get($goal['personality'], 'miss', $vars);
+            $prefix = "**{$vars['name']}** skipped " . self::cadenceLabel($goal['cadence_type']) . " check-in for **{$goal['name']}**.";
+            $msg = $prefix . "\n" . Library::get($goal['personality'], 'miss', $vars);
             Api::sendMessage($channelId, ['content' => $msg]);
         }
 
@@ -239,6 +243,17 @@ class CheckIn
              ON CONFLICT (guild_id, user_id) DO UPDATE SET display_name = EXCLUDED.display_name, updated_at = NOW()",
             [':gid' => $guildId, ':uid' => $userId, ':dn' => $displayName]
         );
+    }
+
+    private static function cadenceLabel(string $cadenceType): string
+    {
+        return match ($cadenceType) {
+            Types::CADENCE_WEEKLY_ONCE,
+            Types::CADENCE_WEEKLY_X     => "this week's",
+            Types::CADENCE_MONTHLY_ONCE,
+            Types::CADENCE_MONTHLY_X    => "this month's",
+            default                     => "today's",
+        };
     }
 
     private static function ephemeral(string $content): array
