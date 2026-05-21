@@ -161,7 +161,7 @@ class CheckIn
         return self::ephemeral("Skip recorded.");
     }
 
-    private static function isComeback(string $goalId): bool
+    private static function isComeback(int|string $goalId): bool
     {
         $last = Database::fetch(
             "SELECT status FROM checkins WHERE goal_id = :gid AND status NOT IN ('pending') ORDER BY scheduled_at DESC LIMIT 1",
