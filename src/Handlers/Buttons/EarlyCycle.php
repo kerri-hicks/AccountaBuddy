@@ -8,6 +8,7 @@ use AccountaBuddy\Database;
 use AccountaBuddy\Discord\Api;
 use AccountaBuddy\Discord\Types;
 use AccountaBuddy\Handlers\Modals\GoalCreate;
+use AccountaBuddy\Messages\Library;
 
 class EarlyCycle
 {
@@ -67,8 +68,17 @@ class EarlyCycle
         }
 
         if ($channelId) {
+            $personalityIcon = match ($goal['personality']) {
+                Types::PERSONALITY_HYPE      => '🔥📣',
+                Types::PERSONALITY_DRY       => '📈📊',
+                Types::PERSONALITY_SARCASTIC => '👀🦊',
+                Types::PERSONALITY_HARSH     => '🗿💀',
+                default                      => '',
+            };
+            $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
             Api::sendMessage($channelId, [
-                'content' => "🔄 {$displayName} started a new cycle early for **{$goal['name']}**! Fresh slate, same energy.",
+                'content' => $header . "\n"
+                           . "🔄 {$displayName} started a new cycle early! Fresh slate, same energy.",
             ]);
         }
 
@@ -83,8 +93,17 @@ class EarlyCycle
         );
 
         if ($channelId) {
+            $personalityIcon = match ($goal['personality']) {
+                Types::PERSONALITY_HYPE      => '🔥📣',
+                Types::PERSONALITY_DRY       => '📈📊',
+                Types::PERSONALITY_SARCASTIC => '👀🦊',
+                Types::PERSONALITY_HARSH     => '🗿💀',
+                default                      => '',
+            };
+            $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
             Api::sendMessage($channelId, [
-                'content' => "⏳ {$displayName} is finishing out the current cycle for **{$goal['name']}**. Daily check-ins continue!",
+                'content' => $header . "\n"
+                           . "⏳ {$displayName} is finishing out the current cycle. Daily check-ins continue!",
             ]);
         }
 

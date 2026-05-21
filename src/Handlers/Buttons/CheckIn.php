@@ -204,7 +204,24 @@ class CheckIn
             };
             $vars = ['name' => $displayName, 'goal' => $goal['name']];
             $msg  = Library::get($goal['personality'], 'milestone', $vars);
-            Api::sendMessage($channelId, ['content' => "🏆 **{$label} milestone for {$displayName}!**\n{$msg}"]);
+
+            $personalityIcon = match ($goal['personality']) {
+                Types::PERSONALITY_HYPE      => '🔥📣',
+                Types::PERSONALITY_DRY       => '📈📊',
+                Types::PERSONALITY_SARCASTIC => '👀🦊',
+                Types::PERSONALITY_HARSH     => '🗿💀',
+                default                      => '',
+            };
+            $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
+            $msgLines = explode("\n", $msg);
+            array_shift($msgLines);
+            $body = implode("\n", $msgLines);
+
+            Api::sendMessage($channelId, [
+                'content' => $header . "\n"
+                           . "🏆 **{$label} milestone for {$displayName}!**\n"
+                           . $body,
+            ]);
         }
     }
 

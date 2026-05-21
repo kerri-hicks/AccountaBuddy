@@ -146,7 +146,9 @@ class CheckInScheduler
             default                      => '',
         };
 
-        $content = "{$personalityIcon} Time to check in, <@{$goal['user_id']}>!\n"
+        $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
+        $content = $header . "\n"
+                 . "Time to check in, <@{$goal['user_id']}>!\n"
                  . "Goal: **{$goal['name']}**"
                  . $streakLine;
 

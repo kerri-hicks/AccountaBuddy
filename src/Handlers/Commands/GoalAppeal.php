@@ -8,6 +8,7 @@ use AccountaBuddy\Database;
 use AccountaBuddy\Discord\Api;
 use AccountaBuddy\Discord\Types;
 use AccountaBuddy\Config;
+use AccountaBuddy\Messages\Library;
 
 class GoalAppeal
 {
@@ -56,7 +57,17 @@ class GoalAppeal
             return self::ephemeral("Server not configured. Ask an admin to run `/accountabuddy setup`.");
         }
 
-        $msg = "**{$displayName}** is appealing a broken streak on **{$goal['name']}**!\n"
+        $personalityIcon = match ($goal['personality']) {
+            Types::PERSONALITY_HYPE      => '🔥📣',
+            Types::PERSONALITY_DRY       => '📈📊',
+            Types::PERSONALITY_SARCASTIC => '👀🦊',
+            Types::PERSONALITY_HARSH     => '🗿💀',
+            default                      => '',
+        };
+        $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
+
+        $msg = $header . "\n"
+             . "**{$displayName}** is appealing a broken streak!\n"
              . "Vote to reinstate their streak. 5 votes needed within 24 hours.\n"
              . "*(Appeal expires: <t:" . strtotime($expiresAt) . ":R>)*";
 

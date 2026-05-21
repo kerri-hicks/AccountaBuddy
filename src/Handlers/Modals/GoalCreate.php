@@ -126,8 +126,15 @@ class GoalCreate
             $cadenceLabel = \AccountaBuddy\Handlers\Commands\GoalList::formatCadence($cadenceType, $cadenceTarget);
 
             $descLine = $description ? "\n> _{$description}_" : '';
+            $personalityIcon = match ($personality) {
+                Types::PERSONALITY_HYPE      => '🔥📣',
+                Types::PERSONALITY_DRY       => '📈📊',
+                Types::PERSONALITY_SARCASTIC => '👀🦊',
+                Types::PERSONALITY_HARSH     => '🗿💀',
+                default                      => '',
+            };
             $lines = [
-                \AccountaBuddy\Messages\Library::milesHeader(),
+                \AccountaBuddy\Messages\Library::milesHeader($personalityIcon),
                 "🎯 **New goal just dropped from <@{$userId}>!**",
                 "> **{$name}**{$descLine}",
                 "",

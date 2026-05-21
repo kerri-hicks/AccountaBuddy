@@ -203,7 +203,9 @@ class BadgeAwarder
 
         if ($channelId && $announcements) {
             $periodLabel = ucfirst($periodType);
-            $msg = "🏆 **{$periodLabel} Badge Awards ({$periodStart} – {$periodEnd})**\n"
+            $header = \AccountaBuddy\Messages\Library::milesHeader();
+            $msg = $header . "\n"
+                 . "🏆 **{$periodLabel} Badge Awards ({$periodStart} – {$periodEnd})**\n"
                  . implode("\n", $announcements);
             Api::sendMessage($channelId, ['content' => $msg]);
         }

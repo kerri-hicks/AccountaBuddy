@@ -51,7 +51,17 @@ class EscalationRunner
                     Types::PERSONALITY_HARSH     => "<@{$checkin['user_id']}>. The check-in. It's been four hours. Well?",
                 ];
 
-                $content = $msgs[$nextPersonality] ?? "Hey <@{$checkin['user_id']}>, still waiting on your check-in for **{$checkin['goal_name']}**.";
+                $personalityIcon = match ($nextPersonality) {
+                    Types::PERSONALITY_HYPE      => '🔥📣',
+                    Types::PERSONALITY_DRY       => '📈📊',
+                    Types::PERSONALITY_SARCASTIC => '👀🦊',
+                    Types::PERSONALITY_HARSH     => '🗿💀',
+                    default                      => '',
+                };
+
+                $header = Library::milesHeader($personalityIcon) . " — **{$checkin['goal_name']}**";
+                $body   = $msgs[$nextPersonality] ?? "Hey <@{$checkin['user_id']}>, still waiting on your check-in.";
+                $content = $header . "\n" . $body;
 
                 Api::sendMessage($checkin['accountability_channel_id'], [
                     'content'    => $content,
@@ -182,8 +192,18 @@ class EscalationRunner
             [':id' => $checkin['goal_id']]
         );
 
+        $personalityIcon = match ($checkin['personality']) {
+            Types::PERSONALITY_HYPE      => '🔥📣',
+            Types::PERSONALITY_DRY       => '📈📊',
+            Types::PERSONALITY_SARCASTIC => '👀🦊',
+            Types::PERSONALITY_HARSH     => '🗿💀',
+            default                      => '',
+        };
+        $header = Library::milesHeader($personalityIcon) . " — **{$checkin['goal_name']}**";
+
         // Aggressive public callout
-        $callout = "🚨 <@{$checkin['user_id']}> has missed two check-ins in a row on **{$checkin['goal_name']}**. "
+        $callout = $header . "\n"
+                 . "🚨 <@{$checkin['user_id']}> has missed two check-ins in a row. "
                  . "Goal placed on hold. Check your DMs.";
         Api::sendMessage($checkin['accountability_channel_id'], ['content' => $callout]);
 

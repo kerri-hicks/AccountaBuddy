@@ -47,6 +47,15 @@ class AppealExpiry
         $channelId = $appeal['accountability_channel_id'];
         $vars      = ['name' => $appeal['display_name'], 'goal' => $appeal['goal_name']];
 
+        $personalityIcon = match ($appeal['personality']) {
+            Types::PERSONALITY_HYPE      => '🔥📣',
+            Types::PERSONALITY_DRY       => '📈📊',
+            Types::PERSONALITY_SARCASTIC => '👀🦊',
+            Types::PERSONALITY_HARSH     => '🗿💀',
+            default                      => '',
+        };
+        $header = Library::milesHeader($personalityIcon) . " — **{$appeal['goal_name']}**";
+
         if ($voteCount >= 5) {
             // Approved
             Database::execute(
@@ -59,9 +68,14 @@ class AppealExpiry
             );
 
             $msg = Library::get($appeal['personality'], 'comeback', $vars);
+            $msgLines = explode("\n", $msg);
+            array_shift($msgLines);
+            $body = implode("\n", $msgLines);
+
             Api::sendMessage($channelId, [
-                'content' => "✅ **Streak appeal approved** for {$appeal['display_name']} on **{$appeal['goal_name']}**! "
-                           . "({$voteCount} votes) Streak reinstated.\n{$msg}",
+                'content' => $header . "\n"
+                           . "✅ **Streak appeal approved** for {$appeal['display_name']}! ({$voteCount} votes) Streak reinstated.\n"
+                           . $body,
             ]);
         } else {
             // Denied
@@ -71,8 +85,8 @@ class AppealExpiry
             );
 
             Api::sendMessage($channelId, [
-                'content' => "❌ **Streak appeal denied** for {$appeal['display_name']} on **{$appeal['goal_name']}**. "
-                           . "Only {$voteCount}/5 votes in 24 hours. Broken streak stands.",
+                'content' => $header . "\n"
+                           . "❌ **Streak appeal denied** for {$appeal['display_name']}. Only {$voteCount}/5 votes in 24 hours. Broken streak stands.",
             ]);
         }
     }

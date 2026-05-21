@@ -46,7 +46,15 @@ class GoalPause
         $config = Database::fetch("SELECT * FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
         if ($config) {
             $displayName = Api::resolveDisplayName($interaction);
-            $msg = "**{$displayName}** has paused their goal: **{$goal['name']}**. Check-ins are on hold.";
+            $personalityIcon = match ($goal['personality']) {
+                Types::PERSONALITY_HYPE      => '🔥📣',
+                Types::PERSONALITY_DRY       => '📈📊',
+                Types::PERSONALITY_SARCASTIC => '👀🦊',
+                Types::PERSONALITY_HARSH     => '🗿💀',
+                default                      => '',
+            };
+            $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
+            $msg = $header . "\n" . "**{$displayName}** has paused their goal. Check-ins are on hold.";
             Api::sendMessage($config['accountability_channel_id'], ['content' => $msg]);
         }
 

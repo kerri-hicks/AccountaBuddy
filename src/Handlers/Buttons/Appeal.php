@@ -78,8 +78,23 @@ class Appeal
                     );
                     $name = $owner['display_name'] ?? 'User';
                     $msg  = Library::get($goal['personality'], 'comeback', ['name' => $name, 'goal' => $goal['name']]);
+
+                    $personalityIcon = match ($goal['personality']) {
+                        Types::PERSONALITY_HYPE      => '🔥📣',
+                        Types::PERSONALITY_DRY       => '📈📊',
+                        Types::PERSONALITY_SARCASTIC => '👀🦊',
+                        Types::PERSONALITY_HARSH     => '🗿💀',
+                        default                      => '',
+                    };
+                    $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
+                    $msgLines = explode("\n", $msg);
+                    array_shift($msgLines);
+                    $body = implode("\n", $msgLines);
+
                     Api::sendMessage($channelId, [
-                        'content' => "✅ **Streak appeal approved!** {$voteCount} votes — {$name}'s streak on **{$goal['name']}** has been reinstated.\n{$msg}",
+                        'content' => $header . "\n"
+                                   . "✅ **Streak appeal approved!** {$voteCount} votes — {$name}'s streak has been reinstated.\n"
+                                   . $body,
                     ]);
                 }
             }
