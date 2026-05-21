@@ -1,4 +1,4 @@
-# AccountaBuddy — Full Product Specification
+# AccountaBuddy — Full Product Spec
 
 **Platform:** Discord  
 **Hosting:** Railway (PHP bot process + PostgreSQL database)  
