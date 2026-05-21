@@ -126,7 +126,11 @@ class CheckIn
     {
         // Mark escalation pending — EscalationRunner will fire in 4h
         Database::execute(
-            "UPDATE checkins SET escalation_level = 0 WHERE goal_id = :gid AND status = 'pending' ORDER BY scheduled_at DESC LIMIT 1",
+            "UPDATE checkins SET escalation_level = 0 WHERE id = (
+                SELECT id FROM checkins 
+                WHERE goal_id = :gid AND status = 'pending' 
+                ORDER BY scheduled_at DESC LIMIT 1
+            )",
             [':gid' => $goal['id']]
         );
 
@@ -143,7 +147,11 @@ class CheckIn
     {
         // Mark as skipped = miss
         Database::execute(
-            "UPDATE checkins SET status = 'skipped', responded_at = NOW() WHERE goal_id = :gid AND status = 'pending' ORDER BY scheduled_at DESC LIMIT 1",
+            "UPDATE checkins SET status = 'skipped', responded_at = NOW() WHERE id = (
+                SELECT id FROM checkins 
+                WHERE goal_id = :gid AND status = 'pending' 
+                ORDER BY scheduled_at DESC LIMIT 1
+            )",
             [':gid' => $goal['id']]
         );
 

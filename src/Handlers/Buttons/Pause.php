@@ -45,8 +45,11 @@ class Pause
         // Mark any pending checkin complete
         Database::execute(
             "UPDATE checkins SET status = 'complete', responded_at = NOW()
-              WHERE goal_id = :gid AND status = 'pending'
-              ORDER BY scheduled_at DESC LIMIT 1",
+              WHERE id = (
+                  SELECT id FROM checkins 
+                  WHERE goal_id = :gid AND status = 'pending' 
+                  ORDER BY scheduled_at DESC LIMIT 1
+              )",
             [':gid' => $goal['id']]
         );
 
@@ -110,8 +113,11 @@ class Pause
         // Mark today's pending check-in as skipped so it doesn't trigger escalation/miss
         Database::execute(
             "UPDATE checkins SET status = 'skipped', responded_at = NOW()
-              WHERE goal_id = :gid AND status = 'pending'
-              ORDER BY scheduled_at DESC LIMIT 1",
+              WHERE id = (
+                  SELECT id FROM checkins 
+                  WHERE goal_id = :gid AND status = 'pending' 
+                  ORDER BY scheduled_at DESC LIMIT 1
+              )",
             [':gid' => $goal['id']]
         );
 
