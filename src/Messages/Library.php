@@ -572,12 +572,14 @@ class Library
             default                      => '',
         };
 
+        $iconPrefix = $personalityIcon ? $personalityIcon . ' ' : '';
+
         if (!$pool) {
-            $header = self::milesHeader($personalityIcon);
+            $header = self::milesHeader();
             if (!empty($vars['goal'])) {
                 $header .= " — **" . $vars['goal'] . "**";
             }
-            return $header . "\nCheck-in recorded for {$vars['name']}.";
+            return $header . "\n" . $iconPrefix . "Check-in recorded for {$vars['name']}.";
         }
 
         $count = count($pool);
@@ -589,11 +591,11 @@ class Library
             $message = $pool[array_rand($pool)];
         }
 
-        $header  = self::milesHeader($personalityIcon);
+        $header  = self::milesHeader();
         if (!empty($vars['goal']) && !str_contains($message, '{goal}')) {
             $header .= " — **" . $vars['goal'] . "**";
         }
-        return $header . "\n" . self::substitute($message, $vars);
+        return $header . "\n" . $iconPrefix . self::substitute($message, $vars);
     }
 
     private static function substitute(string $template, array $vars): string
