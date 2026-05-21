@@ -13,7 +13,7 @@ class Timezone
     {
         $userId   = $interaction['member']['user']['id'] ?? $interaction['user']['id'] ?? '';
         $username = $interaction['member']['user']['username'] ?? $interaction['user']['username'] ?? 'unknown';
-        $tz       = trim($interaction['data']['options'][0]['value'] ?? '');
+        $tz       = trim($interaction['data']['options'][0]['options'][0]['value'] ?? '');
 
         if ($tz === '') {
             return self::ephemeral("Please provide a timezone name. Example: `/timezone America/New_York`");

@@ -256,8 +256,10 @@ class Timezone
 
     public static function handle(array $interaction): array
     {
+        // Options are nested: data.options[0] is the subcommand, its options contain the focused field
         $query = '';
-        foreach ($interaction['data']['options'] ?? [] as $opt) {
+        $subOptions = $interaction['data']['options'][0]['options'] ?? [];
+        foreach ($subOptions as $opt) {
             if (($opt['focused'] ?? false) && $opt['name'] === 'timezone') {
                 $query = trim($opt['value'] ?? '');
                 break;

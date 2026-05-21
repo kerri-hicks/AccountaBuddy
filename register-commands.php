@@ -86,17 +86,6 @@ $commands = [
         ],
     ],
     [
-        'name'        => 'timezone',
-        'description' => 'Set your personal timezone for check-in scheduling',
-        'options'     => [[
-            'type'         => 3, // STRING
-            'name'         => 'timezone',
-            'description'  => 'Start typing your city name',
-            'required'     => true,
-            'autocomplete' => true,
-        ]],
-    ],
-    [
         'name'        => 'accountabuddy',
         'description' => 'AccountaBuddy server management',
         'options'     => [
@@ -124,6 +113,18 @@ $commands = [
                 'type'        => 1,
                 'name'        => 'leaderboard',
                 'description' => 'Show current badge standings',
+            ],
+            [
+                'type'        => 1,
+                'name'        => 'timezone',
+                'description' => 'Set your personal timezone for check-in scheduling',
+                'options'     => [[
+                    'type'         => 3, // STRING
+                    'name'         => 'timezone',
+                    'description'  => 'Start typing your city name',
+                    'required'     => true,
+                    'autocomplete' => true,
+                ]],
             ],
         ],
     ],

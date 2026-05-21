@@ -41,7 +41,7 @@ class CheckIn
         };
 
         if ($needsTzReminder) {
-            $response['data']['content'] .= "\n\n💡 **Set your timezone** so check-ins happen at the right time for you: `/timezone America/New_York` (or your city).";
+            $response['data']['content'] .= "\n\n💡 **Set your timezone** so check-ins happen at the right time for you. Use `/accountabuddy timezone` and pick your city.";
         }
 
         return $response;

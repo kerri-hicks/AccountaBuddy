@@ -58,10 +58,10 @@ class InteractionRouter
             'accountabuddy' => match ($sub) {
                 'setup'       => Setup::handle($this->interaction),
                 'leaderboard' => Leaderboard::handle($this->interaction),
+                'timezone'    => Timezone::handle($this->interaction),
                 default       => $this->unknown(),
             },
-            'timezone'      => Timezone::handle($this->interaction),
-            default         => $this->unknown(),
+            default => $this->unknown(),
         };
     }
 
@@ -130,11 +130,13 @@ class InteractionRouter
     private function handleAutocomplete(): array
     {
         $name = $this->interaction['data']['name'] ?? '';
+        $sub  = $this->interaction['data']['options'][0]['name'] ?? '';
 
-        return match ($name) {
-            'timezone' => TimezoneAutocomplete::handle($this->interaction),
-            default    => ['type' => Types::APPLICATION_COMMAND_AUTOCOMPLETE_RESULT, 'data' => ['choices' => []]],
-        };
+        if ($name === 'accountabuddy' && $sub === 'timezone') {
+            return TimezoneAutocomplete::handle($this->interaction);
+        }
+
+        return ['type' => Types::APPLICATION_COMMAND_AUTOCOMPLETE_RESULT, 'data' => ['choices' => []]];
     }
 
     private function unknown(): array
