@@ -554,24 +554,42 @@ class Library
      * @param string $event        e.g. 'win', 'miss', 'milestone', etc.
      * @param array  $vars         Associative array: ['name' => ..., 'goal' => ..., 'N' => ..., 'streak' => ...]
      */
-    public static function milesHeader(): string
+    public static function milesHeader(string $personalityIcon = ''): string
     {
-        return Types::MILES_EMOJI . ' **Miles**';
+        $prefix = $personalityIcon ? $personalityIcon . ' ' : '';
+        return $prefix . Types::MILES_EMOJI . ' **Miles**';
     }
 
     public static function get(string $personality, string $event, array $vars = []): string
     {
         $pool = self::$messages[$personality][$event] ?? null;
+        
+        $personalityIcon = match ($personality) {
+            Types::PERSONALITY_HYPE      => '🔥📣',
+            Types::PERSONALITY_DRY       => '📈📊',
+            Types::PERSONALITY_SARCASTIC => '👀🦊',
+            Types::PERSONALITY_HARSH     => '🗿💀',
+            default                      => '',
+        };
+
         if (!$pool) {
-            $header = self::milesHeader();
+            $header = self::milesHeader($personalityIcon);
             if (!empty($vars['goal'])) {
                 $header .= " — **" . $vars['goal'] . "**";
             }
             return $header . "\nCheck-in recorded for {$vars['name']}.";
         }
 
-        $message = $pool[array_rand($pool)];
-        $header  = self::milesHeader();
+        $count = count($pool);
+        if ($count >= 2) {
+            $keys = array_rand($pool, 2);
+            shuffle($keys);
+            $message = $pool[$keys[0]] . " " . $pool[$keys[1]];
+        } else {
+            $message = $pool[array_rand($pool)];
+        }
+
+        $header  = self::milesHeader($personalityIcon);
         if (!empty($vars['goal']) && !str_contains($message, '{goal}')) {
             $header .= " — **" . $vars['goal'] . "**";
         }

@@ -169,7 +169,7 @@ class CheckInScheduler
                     ],
                     [
                         'type'      => Types::COMPONENT_BUTTON,
-                        'style'     => Types::BUTTON_DANGER,
+                        'style'     => Types::BUTTON_PRIMARY,
                         'label'     => '⏭️ Skipping this one',
                         'custom_id' => "checkin_skipping:{$goal['id']}",
                     ],
