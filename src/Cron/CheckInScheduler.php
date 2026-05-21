@@ -13,28 +13,36 @@ class CheckInScheduler
 {
     public function run(): void
     {
-        $nowTime = gmdate('H:i:s'); // Current UTC time
-        $today   = gmdate('Y-m-d'); // Current UTC date
-
-        // Find all active/paused goals whose checkin_time is past-due today and no check-in exists yet.
-        // If the goal was created today, checkin_time must be >= creation time.
+        // Effective timezone per goal: user's if set, else server's, else UTC.
+        // All date/time comparisons happen in that local timezone so check-ins
+        // fire at the right wall-clock time regardless of where the user lives.
         $goals = Database::fetchAll(
-            "SELECT g.*, sc.accountability_channel_id, gm.display_name
-               FROM goals g
-               JOIN server_config sc ON sc.guild_id = g.guild_id
-               JOIN guild_members gm ON gm.guild_id = g.guild_id AND gm.user_id = g.user_id
-              WHERE g.status IN ('active', 'paused')
-                AND g.checkin_time <= :t
+            "WITH eff AS (
+                SELECT g.*,
+                       sc.accountability_channel_id,
+                       gm.display_name,
+                       CASE WHEN u.timezone_set THEN u.timezone
+                            ELSE COALESCE(sc.timezone, 'UTC')
+                       END AS eff_tz
+                  FROM goals g
+                  JOIN server_config sc ON sc.guild_id = g.guild_id
+                  JOIN guild_members gm ON gm.guild_id = g.guild_id AND gm.user_id = g.user_id
+                  JOIN users u ON u.id = g.user_id
+                 WHERE g.status IN ('active', 'paused')
+             )
+             SELECT *,
+                    (NOW() AT TIME ZONE eff_tz)::date AS user_today
+               FROM eff
+              WHERE (NOW() AT TIME ZONE eff_tz)::time >= checkin_time
                 AND NOT EXISTS (
-                    SELECT 1 FROM checkins c 
-                     WHERE c.goal_id = g.id 
-                       AND c.cycle_date = :d
+                    SELECT 1 FROM checkins c
+                     WHERE c.goal_id = eff.id
+                       AND c.cycle_date = (NOW() AT TIME ZONE eff_tz)::date
                 )
                 AND (
-                    (g.created_at AT TIME ZONE 'UTC')::date < :d 
-                    OR g.checkin_time >= (g.created_at AT TIME ZONE 'UTC')::time
-                )",
-            [':t' => $nowTime, ':d' => $today]
+                    (created_at AT TIME ZONE eff_tz)::date < (NOW() AT TIME ZONE eff_tz)::date
+                    OR checkin_time >= (created_at AT TIME ZONE eff_tz)::time
+                )"
         );
 
         foreach ($goals as $goal) {
@@ -48,8 +56,8 @@ class CheckInScheduler
 
     private function processGoal(array $goal): void
     {
-        $today      = gmdate('Y-m-d');
-        $channelId  = $goal['accountability_channel_id'];
+        $today       = $goal['user_today']; // user's local date from the scheduler query
+        $channelId   = $goal['accountability_channel_id'];
         $displayName = $goal['display_name'];
 
         // Avoid double-firing (extra safety, though SQL NOT EXISTS covers this)

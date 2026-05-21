@@ -1,0 +1,3 @@
+-- Migration 001: per-user timezone support
+ALTER TABLE users ADD COLUMN IF NOT EXISTS timezone     TEXT    NOT NULL DEFAULT 'UTC';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS timezone_set BOOLEAN NOT NULL DEFAULT FALSE;

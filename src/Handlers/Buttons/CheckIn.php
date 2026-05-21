@@ -30,14 +30,21 @@ class CheckIn
         // Update display name
         self::upsertMember($userId, $guildId, $displayName, $interaction);
 
-        $vars = ['name' => $displayName, 'goal' => $goal['name'], 'streak' => $goal['streak_count']];
+        $vars          = ['name' => $displayName, 'goal' => $goal['name'], 'streak' => $goal['streak_count']];
+        $needsTzReminder = self::needsTimezoneReminder($userId);
 
-        return match ($action) {
-            'checkin_did_it'  => self::handleDidIt($goal, $userId, $guildId, $channelId, $displayName, $vars),
-            'checkin_not_yet' => self::handleNotYet($goal, $channelId, $displayName),
-            'checkin_skipping'=> self::handleSkipping($goal, $channelId, $vars),
+        $response = match ($action) {
+            'checkin_did_it'   => self::handleDidIt($goal, $userId, $guildId, $channelId, $displayName, $vars),
+            'checkin_not_yet'  => self::handleNotYet($goal, $channelId, $displayName),
+            'checkin_skipping' => self::handleSkipping($goal, $channelId, $vars),
             default            => self::ephemeral("Unknown action."),
         };
+
+        if ($needsTzReminder) {
+            $response['data']['content'] .= "\n\n💡 **Set your timezone** so check-ins happen at the right time for you: `/timezone America/New_York` (or your city).";
+        }
+
+        return $response;
     }
 
     private static function handleDidIt(array $goal, string $userId, string $guildId, ?string $channelId, string $displayName, array $vars): array
@@ -220,6 +227,12 @@ class CheckIn
                            . $body,
             ]);
         }
+    }
+
+    private static function needsTimezoneReminder(string $userId): bool
+    {
+        $row = Database::fetch("SELECT timezone_set FROM users WHERE id = :id", [':id' => $userId]);
+        return !($row['timezone_set'] ?? false);
     }
 
     private static function upsertMember(string $userId, string $guildId, string $displayName, array $interaction): void

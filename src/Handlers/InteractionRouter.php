@@ -13,6 +13,7 @@ use AccountaBuddy\Handlers\Commands\GoalCancel;
 use AccountaBuddy\Handlers\Commands\GoalAppeal;
 use AccountaBuddy\Handlers\Commands\Setup;
 use AccountaBuddy\Handlers\Commands\Leaderboard;
+use AccountaBuddy\Handlers\Commands\Timezone;
 use AccountaBuddy\Handlers\Modals\GoalCreate;
 use AccountaBuddy\Handlers\Buttons\CheckIn;
 use AccountaBuddy\Handlers\Buttons\OneTime;
@@ -57,7 +58,8 @@ class InteractionRouter
                 'leaderboard' => Leaderboard::handle($this->interaction),
                 default       => $this->unknown(),
             },
-            default => $this->unknown(),
+            'timezone'      => Timezone::handle($this->interaction),
+            default         => $this->unknown(),
         };
     }
 

@@ -3,6 +3,8 @@
 CREATE TABLE IF NOT EXISTS users (
     id               TEXT PRIMARY KEY,   -- Discord user ID (snowflake)
     discord_username TEXT NOT NULL,
+    timezone         TEXT NOT NULL DEFAULT 'UTC',
+    timezone_set     BOOLEAN NOT NULL DEFAULT FALSE,
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
