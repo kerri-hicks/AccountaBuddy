@@ -563,11 +563,19 @@ class Library
     {
         $pool = self::$messages[$personality][$event] ?? null;
         if (!$pool) {
-            return self::milesHeader() . "\nCheck-in recorded for {$vars['name']}.";
+            $header = self::milesHeader();
+            if (!empty($vars['goal'])) {
+                $header .= " — **" . $vars['goal'] . "**";
+            }
+            return $header . "\nCheck-in recorded for {$vars['name']}.";
         }
 
         $message = $pool[array_rand($pool)];
-        return self::milesHeader() . "\n" . self::substitute($message, $vars);
+        $header  = self::milesHeader();
+        if (!empty($vars['goal']) && !str_contains($message, '{goal}')) {
+            $header .= " — **" . $vars['goal'] . "**";
+        }
+        return $header . "\n" . self::substitute($message, $vars);
     }
 
     private static function substitute(string $template, array $vars): string
