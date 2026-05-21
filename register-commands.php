@@ -89,10 +89,11 @@ $commands = [
         'name'        => 'timezone',
         'description' => 'Set your personal timezone for check-in scheduling',
         'options'     => [[
-            'type'        => 3, // STRING
-            'name'        => 'timezone',
-            'description' => 'TZ database name (e.g. America/New_York, Europe/London, Asia/Tokyo)',
-            'required'    => true,
+            'type'         => 3, // STRING
+            'name'         => 'timezone',
+            'description'  => 'Start typing your city name',
+            'required'     => true,
+            'autocomplete' => true,
         ]],
     ],
     [

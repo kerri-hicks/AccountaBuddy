@@ -23,6 +23,7 @@ use AccountaBuddy\Handlers\Buttons\Appeal;
 use AccountaBuddy\Handlers\Buttons\Hold;
 use AccountaBuddy\Handlers\Buttons\CancelConfirm;
 use AccountaBuddy\Handlers\Buttons\GoalSetup;
+use AccountaBuddy\Handlers\Autocomplete\Timezone as TimezoneAutocomplete;
 
 class InteractionRouter
 {
@@ -31,10 +32,11 @@ class InteractionRouter
     public function dispatch(): array
     {
         return match ($this->interaction['type']) {
-            Types::APPLICATION_COMMAND => $this->handleCommand(),
-            Types::MESSAGE_COMPONENT   => $this->handleComponent(),
-            Types::MODAL_SUBMIT        => $this->handleModal(),
-            default                    => $this->unknown(),
+            Types::APPLICATION_COMMAND               => $this->handleCommand(),
+            Types::MESSAGE_COMPONENT                 => $this->handleComponent(),
+            Types::MODAL_SUBMIT                      => $this->handleModal(),
+            Types::APPLICATION_COMMAND_AUTOCOMPLETE  => $this->handleAutocomplete(),
+            default                                  => $this->unknown(),
         };
     }
 
@@ -123,6 +125,16 @@ class InteractionRouter
         }
 
         return $this->unknown();
+    }
+
+    private function handleAutocomplete(): array
+    {
+        $name = $this->interaction['data']['name'] ?? '';
+
+        return match ($name) {
+            'timezone' => TimezoneAutocomplete::handle($this->interaction),
+            default    => ['type' => Types::APPLICATION_COMMAND_AUTOCOMPLETE_RESULT, 'data' => ['choices' => []]],
+        };
     }
 
     private function unknown(): array
