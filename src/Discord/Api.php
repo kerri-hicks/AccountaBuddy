@@ -10,6 +10,9 @@ class Api
 {
     private const BASE = 'https://discord.com/api/v10';
 
+    private static array $deferredFollowups = [];
+    private static bool $registeredShutdown = false;
+
     private static function request(string $method, string $path, array $body = []): array
     {
         $url = self::BASE . $path;
@@ -86,7 +89,26 @@ class Api
 
     public static function followUp(string $appId, string $token, array $data): array
     {
-        return self::post("/webhooks/{$appId}/{$token}", $data);
+        self::$deferredFollowups[] = [
+            'appId' => $appId,
+            'token' => $token,
+            'data'  => $data,
+        ];
+
+        if (!self::$registeredShutdown) {
+            self::$registeredShutdown = true;
+            register_shutdown_function(static function () {
+                foreach (Api::$deferredFollowups as $followUp) {
+                    try {
+                        Api::post("/webhooks/" . $followUp['appId'] . "/" . $followUp['token'], $followUp['data']);
+                    } catch (\Throwable $e) {
+                        error_log("Failed to send deferred follow-up: " . $e->getMessage());
+                    }
+                }
+            });
+        }
+
+        return [];
     }
 
     public static function editFollowUp(string $appId, string $token, string $messageId, array $data): array

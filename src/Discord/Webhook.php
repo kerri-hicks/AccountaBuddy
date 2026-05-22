@@ -60,7 +60,24 @@ class Webhook
 
     private function respond(array $data): void
     {
+        $content = json_encode($data, JSON_UNESCAPED_UNICODE);
+        if ($content === false) {
+            $content = '{}';
+        }
+
         header('Content-Type: application/json');
-        echo json_encode($data, JSON_UNESCAPED_UNICODE);
+        header('Connection: close');
+        header('Content-Length: ' . strlen($content));
+
+        echo $content;
+
+        while (ob_get_level() > 0) {
+            ob_end_flush();
+        }
+        flush();
+
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
     }
 }
