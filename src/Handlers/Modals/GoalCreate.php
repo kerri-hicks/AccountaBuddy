@@ -64,9 +64,14 @@ class GoalCreate
             return self::ephemeral("Invalid check-in time. Hours 0–23, minutes 0–59.");
         }
 
-        // Get server config timezone to convert local to UTC
-        $config = Database::fetch("SELECT * FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
-        $timezone = $config['timezone'] ?? 'UTC';
+        // Get effective timezone: user's if set, else server config's, else UTC
+        $userRow = Database::fetch("SELECT timezone, timezone_set FROM users WHERE id = :id", [':id' => $userId]);
+        if ($userRow && ($userRow['timezone_set'] ?? false)) {
+            $timezone = $userRow['timezone'];
+        } else {
+            $config = Database::fetch("SELECT timezone FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
+            $timezone = $config['timezone'] ?? 'UTC';
+        }
 
         try {
             $localTime = new \DateTime("{$hour}:{$minute}:00", new \DateTimeZone($timezone));

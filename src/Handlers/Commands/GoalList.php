@@ -32,8 +32,13 @@ class GoalList
             ];
         }
 
-        $config = Database::fetch("SELECT timezone FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
-        $timezone = $config['timezone'] ?? 'UTC';
+        $userRow = Database::fetch("SELECT timezone, timezone_set FROM users WHERE id = :id", [':id' => $userId]);
+        if ($userRow && ($userRow['timezone_set'] ?? false)) {
+            $timezone = $userRow['timezone'];
+        } else {
+            $config = Database::fetch("SELECT timezone FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
+            $timezone = $config['timezone'] ?? 'UTC';
+        }
 
         $lines = [];
         foreach ($goals as $g) {

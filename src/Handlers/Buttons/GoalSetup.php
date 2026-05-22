@@ -65,9 +65,13 @@ class GoalSetup
     {
         $cadence = $interaction['data']['values'][0] ?? '';
         $guildId = $interaction['guild_id'] ?? '';
+        $userId  = $interaction['member']['user']['id'] ?? $interaction['user']['id'] ?? '';
         
         $timezone = 'UTC';
-        if ($guildId) {
+        $userRow = Database::fetch("SELECT timezone, timezone_set FROM users WHERE id = :id", [':id' => $userId]);
+        if ($userRow && ($userRow['timezone_set'] ?? false)) {
+            $timezone = $userRow['timezone'];
+        } elseif ($guildId) {
             $config = Database::fetch("SELECT timezone FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
             if ($config && !empty($config['timezone'])) {
                 $timezone = $config['timezone'];
