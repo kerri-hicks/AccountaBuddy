@@ -59,26 +59,39 @@ class GoalView
         $cadence = GoalList::formatCadence($goal['cadence_type'], (int)$goal['cadence_target']);
 
         $userRow = Database::fetch("SELECT timezone, timezone_set FROM users WHERE id = :id", [':id' => $userId]);
+        $timezoneSet = false;
         if ($userRow && ($userRow['timezone_set'] ?? false)) {
             $timezone = $userRow['timezone'];
+            $timezoneSet = true;
         } else {
             $config = Database::fetch("SELECT timezone FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
             $timezone = $config['timezone'] ?? 'UTC';
         }
 
         $localCheckinTime = $goal['checkin_time'];
+        $utcFormatted = substr($goal['checkin_time'], 0, 5);
+        $parsedOk = false;
         try {
             $utcTime = new \DateTime($goal['checkin_time'], new \DateTimeZone('UTC'));
             $utcTime->setTimezone(new \DateTimeZone($timezone));
-            $localCheckinTime = $utcTime->format('H:i') . ' ' . $timezone;
+            if ($timezoneSet) {
+                $localCheckinTime = $utcTime->format('H:i');
+            } else {
+                $localCheckinTime = $utcTime->format('H:i') . ' ' . $timezone;
+            }
+            $parsedOk = true;
         } catch (\Throwable $e) {
-            $localCheckinTime = substr($goal['checkin_time'], 0, 5) . ' UTC';
+            $localCheckinTime = $utcFormatted . ' UTC';
         }
+
+        $checkinLine = ($timezoneSet && $parsedOk)
+            ? "Cadence: {$cadence} | Check-in: {$localCheckinTime}"
+            : "Cadence: {$cadence} | Check-in: {$localCheckinTime} ({$utcFormatted} UTC)";
 
         $lines = [
             "**{$goal['name']}**",
             "Status: {$goal['status']} | Personality: {$personalityLabel}",
-            "Cadence: {$cadence} | Check-in: {$localCheckinTime} (" . substr($goal['checkin_time'], 0, 5) . " UTC)",
+            $checkinLine,
         ];
 
         if ($goal['description']) {

@@ -33,8 +33,10 @@ class GoalList
         }
 
         $userRow = Database::fetch("SELECT timezone, timezone_set FROM users WHERE id = :id", [':id' => $userId]);
+        $timezoneSet = false;
         if ($userRow && ($userRow['timezone_set'] ?? false)) {
             $timezone = $userRow['timezone'];
+            $timezoneSet = true;
         } else {
             $config = Database::fetch("SELECT timezone FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
             $timezone = $config['timezone'] ?? 'UTC';
@@ -51,15 +53,26 @@ class GoalList
             $cadence = self::formatCadence($g['cadence_type'], (int)$g['cadence_target']);
 
             $localTime = $g['checkin_time'];
+            $utcFormatted = substr($g['checkin_time'], 0, 5);
+            $parsedOk = false;
             try {
                 $utcTime = new \DateTime($g['checkin_time'], new \DateTimeZone('UTC'));
                 $utcTime->setTimezone(new \DateTimeZone($timezone));
-                $localTime = $utcTime->format('H:i') . ' ' . $timezone;
+                if ($timezoneSet) {
+                    $localTime = $utcTime->format('H:i');
+                } else {
+                    $localTime = $utcTime->format('H:i') . ' ' . $timezone;
+                }
+                $parsedOk = true;
             } catch (\Throwable $e) {
-                $localTime = substr($g['checkin_time'], 0, 5) . ' UTC';
+                $localTime = $utcFormatted . ' UTC';
             }
 
-            $lines[] = "**#{$g['id']}** {$g['name']}{$status} — {$cadence}{$streak} — check-in: {$localTime} (" . substr($g['checkin_time'], 0, 5) . " UTC)";
+            if ($timezoneSet && $parsedOk) {
+                $lines[] = "**#{$g['id']}** {$g['name']}{$status} — {$cadence}{$streak} — check-in: {$localTime}";
+            } else {
+                $lines[] = "**#{$g['id']}** {$g['name']}{$status} — {$cadence}{$streak} — check-in: {$localTime} ({$utcFormatted} UTC)";
+            }
         }
 
         return [

@@ -33,7 +33,7 @@ class CheckInScheduler
              SELECT *,
                     (NOW() AT TIME ZONE eff_tz)::date AS user_today
                FROM eff
-              WHERE (NOW() AT TIME ZONE eff_tz)::time >= checkin_time
+              WHERE (NOW() AT TIME ZONE 'UTC')::time >= checkin_time
                 AND NOT EXISTS (
                     SELECT 1 FROM checkins c
                      WHERE c.goal_id = eff.id
@@ -41,7 +41,7 @@ class CheckInScheduler
                 )
                 AND (
                     (created_at AT TIME ZONE eff_tz)::date < (NOW() AT TIME ZONE eff_tz)::date
-                    OR checkin_time >= (created_at AT TIME ZONE eff_tz)::time
+                    OR checkin_time >= (created_at AT TIME ZONE 'UTC')::time
                 )"
         );
 

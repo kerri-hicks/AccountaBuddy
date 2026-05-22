@@ -64,12 +64,15 @@ class GoalCreate
             return self::ephemeral("Invalid check-in time. Hours 0–23, minutes 0–59.");
         }
 
+        $config = Database::fetch("SELECT * FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
+
         // Get effective timezone: user's if set, else server config's, else UTC
         $userRow = Database::fetch("SELECT timezone, timezone_set FROM users WHERE id = :id", [':id' => $userId]);
+        $timezoneSet = false;
         if ($userRow && ($userRow['timezone_set'] ?? false)) {
             $timezone = $userRow['timezone'];
+            $timezoneSet = true;
         } else {
-            $config = Database::fetch("SELECT timezone FROM server_config WHERE guild_id = :gid", [':gid' => $guildId]);
             $timezone = $config['timezone'] ?? 'UTC';
         }
 
@@ -127,7 +130,7 @@ class GoalCreate
         }
 
         // Post public announcement in accountability channel
-        if ($config) {
+        if ($config && !empty($config['accountability_channel_id'])) {
             $cadenceLabel = \AccountaBuddy\Handlers\Commands\GoalList::formatCadence($cadenceType, $cadenceTarget);
 
             $descLine = $description ? "\n> _{$description}_" : '';
@@ -138,22 +141,31 @@ class GoalCreate
                 Types::PERSONALITY_HARSH     => '🗿💀',
                 default                      => '',
             };
+
+            $timeLine = $timezoneSet 
+                ? "⏰ **Check-ins at:** {$timeRaw}" 
+                : "⏰ **Check-ins at:** {$timeRaw} {$timezone} ({$checkinTime} UTC)";
+
             $lines = [
                 \AccountaBuddy\Messages\Library::milesHeader($personalityIcon),
                 "🎯 **New goal just dropped from <@{$userId}>!**",
                 "> **{$name}**{$descLine}",
                 "",
                 "📅 **Cadence:** {$cadenceLabel}",
-                "⏰ **Check-ins at:** {$timeRaw} {$timezone} ({$checkinTime} UTC)",
+                $timeLine,
             ];
 
             Api::sendMessage($config['accountability_channel_id'], ['content' => implode("\n", $lines)]);
         }
 
+        $ephemeralReply = $timezoneSet
+            ? "✅ Goal **{$name}** created! Your first check-in will fire at {$timeRaw}."
+            : "✅ Goal **{$name}** created! Your first check-in will fire at {$timeRaw} {$timezone} ({$checkinTime} UTC).";
+
         return [
             'type' => Types::CHANNEL_MESSAGE_WITH_SOURCE,
             'data' => [
-                'content' => "✅ Goal **{$name}** created! Your first check-in will fire at {$timeRaw} {$timezone} ({$checkinTime} UTC).",
+                'content' => $ephemeralReply,
                 'flags'   => Types::FLAG_EPHEMERAL,
             ],
         ];
