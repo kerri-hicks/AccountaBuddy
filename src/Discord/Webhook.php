@@ -65,6 +65,8 @@ class Webhook
             $content = '{}';
         }
 
+        ignore_user_abort(true);
+
         header('Content-Type: application/json');
         header('Connection: close');
         header('Content-Length: ' . strlen($content));
@@ -72,7 +74,10 @@ class Webhook
         echo $content;
 
         while (ob_get_level() > 0) {
-            ob_end_flush();
+            $level = ob_get_level();
+            if (!@ob_end_flush() || ob_get_level() >= $level) {
+                break;
+            }
         }
         flush();
 
