@@ -13,7 +13,31 @@ class Timezone
     {
         $userId   = $interaction['member']['user']['id'] ?? $interaction['user']['id'] ?? '';
         $username = $interaction['member']['user']['username'] ?? $interaction['user']['username'] ?? 'unknown';
-        $tz       = trim($interaction['data']['options'][0]['options'][0]['value'] ?? '');
+        $subcommandOptions = [];
+        foreach ($interaction['data']['options'] ?? [] as $opt) {
+            if (($opt['type'] ?? 0) === 1 && ($opt['name'] ?? '') === 'timezone') {
+                $subcommandOptions = $opt['options'] ?? [];
+                break;
+            }
+        }
+
+        $tz = '';
+        if (!empty($subcommandOptions)) {
+            foreach ($subcommandOptions as $opt) {
+                if (($opt['name'] ?? '') === 'timezone') {
+                    $tz = trim((string)($opt['value'] ?? ''));
+                    break;
+                }
+            }
+        } else {
+            // Fallback: check top-level options
+            foreach ($interaction['data']['options'] ?? [] as $opt) {
+                if (($opt['name'] ?? '') === 'timezone') {
+                    $tz = trim((string)($opt['value'] ?? ''));
+                    break;
+                }
+            }
+        }
 
         if ($tz === '') {
             return self::ephemeral("Please provide a timezone name. Example: `/timezone America/New_York`");

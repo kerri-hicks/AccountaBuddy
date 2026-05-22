@@ -24,7 +24,14 @@ class Setup
         }
 
         $guildId = $interaction['guild_id'] ?? '';
-        $options = $interaction['data']['options'][0]['options'] ?? [];
+        $subcommandOptions = [];
+        foreach ($interaction['data']['options'] ?? [] as $opt) {
+            if (($opt['type'] ?? 0) === 1 && ($opt['name'] ?? '') === 'setup') {
+                $subcommandOptions = $opt['options'] ?? [];
+                break;
+            }
+        }
+        $options = !empty($subcommandOptions) ? $subcommandOptions : ($interaction['data']['options'] ?? []);
 
         $channelId = null;
         $timezone  = 'UTC';

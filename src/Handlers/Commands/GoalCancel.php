@@ -14,7 +14,14 @@ class GoalCancel
         $userId  = $interaction['member']['user']['id'] ?? $interaction['user']['id'] ?? '';
         $guildId = $interaction['guild_id'] ?? '';
 
-        $options = $interaction['data']['options'][0]['options'] ?? [];
+        $subcommandOptions = [];
+        foreach ($interaction['data']['options'] ?? [] as $opt) {
+            if (($opt['type'] ?? 0) === 1 && ($opt['name'] ?? '') === 'cancel') {
+                $subcommandOptions = $opt['options'] ?? [];
+                break;
+            }
+        }
+        $options = !empty($subcommandOptions) ? $subcommandOptions : ($interaction['data']['options'] ?? []);
         $goalArg = '';
         foreach ($options as $opt) {
             if ($opt['name'] === 'goal') { $goalArg = (string)$opt['value']; break; }

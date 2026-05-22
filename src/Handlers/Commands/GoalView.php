@@ -14,8 +14,14 @@ class GoalView
         $userId  = $interaction['member']['user']['id'] ?? $interaction['user']['id'] ?? '';
         $guildId = $interaction['guild_id'] ?? '';
 
-        // Get the goal name/id from the option
-        $options = $interaction['data']['options'][0]['options'] ?? [];
+        $subcommandOptions = [];
+        foreach ($interaction['data']['options'] ?? [] as $opt) {
+            if (($opt['type'] ?? 0) === 1 && ($opt['name'] ?? '') === 'view') {
+                $subcommandOptions = $opt['options'] ?? [];
+                break;
+            }
+        }
+        $options = !empty($subcommandOptions) ? $subcommandOptions : ($interaction['data']['options'] ?? []);
         $goalArg = '';
         foreach ($options as $opt) {
             if ($opt['name'] === 'goal') {
