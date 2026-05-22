@@ -27,14 +27,20 @@ class OneTime
         $dayCount    = (int)$goal['reminder_count'];
         $vars        = ['name' => $displayName, 'goal' => $goal['name'], 'N' => $dayCount];
 
-        return match ($action) {
+        $msg = match ($action) {
             'one_time_did_it' => self::handleDone($goal, $channelId, $vars),
             'one_time_cancel' => self::handleCancel($goal, $channelId, $vars),
-            default           => self::ephemeral("Unknown action."),
+            default           => null,
         };
+
+        if ($msg === null) {
+            return self::ephemeral("Unknown action.");
+        }
+
+        return self::updateAndEphemeral($interaction, $msg);
     }
 
-    private static function handleDone(array $goal, ?string $channelId, array $vars): array
+    private static function handleDone(array $goal, ?string $channelId, array $vars): string
     {
         Database::execute(
             "UPDATE goals SET status = 'completed', completed_at = NOW() WHERE id = :id",
@@ -46,10 +52,10 @@ class OneTime
             Api::sendMessage($channelId, ['content' => $msg]);
         }
 
-        return self::ephemeral("Marked as done! Goal slot freed.");
+        return "Marked as done! Goal slot freed.";
     }
 
-    private static function handleCancel(array $goal, ?string $channelId, array $vars): array
+    private static function handleCancel(array $goal, ?string $channelId, array $vars): string
     {
         Database::execute(
             "UPDATE goals SET status = 'cancelled', cancelled_at = NOW() WHERE id = :id",
@@ -61,7 +67,7 @@ class OneTime
             Api::sendMessage($channelId, ['content' => $msg]);
         }
 
-        return self::ephemeral("Goal cancelled.");
+        return "Goal cancelled.";
     }
 
     private static function ephemeral(string $content): array
@@ -69,6 +75,31 @@ class OneTime
         return [
             'type' => Types::CHANNEL_MESSAGE_WITH_SOURCE,
             'data' => ['content' => $content, 'flags' => Types::FLAG_EPHEMERAL],
+        ];
+    }
+
+    private static function updateAndEphemeral(array $interaction, string $content): array
+    {
+        $appId = $interaction['application_id'] ?? '';
+        $token = $interaction['token'] ?? '';
+        if ($appId && $token && $content !== '') {
+            try {
+                Api::followUp($appId, $token, [
+                    'content' => $content,
+                    'flags'   => Types::FLAG_EPHEMERAL,
+                ]);
+            } catch (\Throwable $e) {
+                error_log("Failed to send ephemeral follow-up: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'type' => Types::UPDATE_MESSAGE,
+            'data' => [
+                'content'    => $interaction['message']['content'] ?? '',
+                'embeds'     => $interaction['message']['embeds'] ?? [],
+                'components' => [],
+            ],
         ];
     }
 }

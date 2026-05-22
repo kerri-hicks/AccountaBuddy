@@ -26,14 +26,20 @@ class EarlyCycle
         $channelId = $config['accountability_channel_id'] ?? null;
         $displayName = Api::resolveDisplayName($interaction);
 
-        return match ($action) {
+        $msg = match ($action) {
             'early_new_cycle'   => self::handleNewCycle($goal, $channelId, $displayName),
             'early_finish_out'  => self::handleFinishOut($goal, $channelId, $displayName),
-            default             => self::ephemeral("Unknown action."),
+            default             => null,
         };
+
+        if ($msg === null) {
+            return self::ephemeral("Unknown action.");
+        }
+
+        return self::updateAndEphemeral($interaction, $msg);
     }
 
-    private static function handleNewCycle(array $goal, ?string $channelId, string $displayName): array
+    private static function handleNewCycle(array $goal, ?string $channelId, string $displayName): string
     {
         // Close current cycle as completed
         $cycle = Database::fetch(
@@ -82,10 +88,10 @@ class EarlyCycle
             ]);
         }
 
-        return self::ephemeral("New cycle started! Keep the momentum going.");
+        return "New cycle started! Keep the momentum going.";
     }
 
-    private static function handleFinishOut(array $goal, ?string $channelId, string $displayName): array
+    private static function handleFinishOut(array $goal, ?string $channelId, string $displayName): string
     {
         Database::execute(
             "UPDATE goals SET overachiever_finish_out = TRUE WHERE id = :id",
@@ -107,7 +113,7 @@ class EarlyCycle
             ]);
         }
 
-        return self::ephemeral("Got it — finishing out the cycle. Daily nudges will continue.");
+        return "Got it — finishing out the cycle. Daily nudges will continue.";
     }
 
     private static function ephemeral(string $content): array
@@ -115,6 +121,31 @@ class EarlyCycle
         return [
             'type' => Types::CHANNEL_MESSAGE_WITH_SOURCE,
             'data' => ['content' => $content, 'flags' => Types::FLAG_EPHEMERAL],
+        ];
+    }
+
+    private static function updateAndEphemeral(array $interaction, string $content): array
+    {
+        $appId = $interaction['application_id'] ?? '';
+        $token = $interaction['token'] ?? '';
+        if ($appId && $token && $content !== '') {
+            try {
+                Api::followUp($appId, $token, [
+                    'content' => $content,
+                    'flags'   => Types::FLAG_EPHEMERAL,
+                ]);
+            } catch (\Throwable $e) {
+                error_log("Failed to send ephemeral follow-up: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'type' => Types::UPDATE_MESSAGE,
+            'data' => [
+                'content'    => $interaction['message']['content'] ?? '',
+                'embeds'     => $interaction['message']['embeds'] ?? [],
+                'components' => [],
+            ],
         ];
     }
 }

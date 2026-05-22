@@ -26,15 +26,21 @@ class Pause
         $displayName = Api::resolveDisplayName($interaction);
         $vars        = ['name' => $displayName, 'goal' => $goal['name']];
 
-        return match ($action) {
+        $msg = match ($action) {
             'unpause_did'    => self::handleUnpauseDid($goal, $channelId, $vars),
             'unpause_going'  => self::handleUnpauseGoing($goal, $channelId, $vars),
             'cancel_goal'    => self::handleCancel($goal, $channelId, $vars),
-            default          => self::ephemeral("Unknown action."),
+            default          => null,
         };
+
+        if ($msg === null) {
+            return self::ephemeral("Unknown action.");
+        }
+
+        return self::updateAndEphemeral($interaction, $msg);
     }
 
-    private static function handleUnpauseDid(array $goal, ?string $channelId, array $vars): array
+    private static function handleUnpauseDid(array $goal, ?string $channelId, array $vars): string
     {
         // Unpause and count as a completion
         Database::execute(
@@ -100,10 +106,10 @@ class Pause
             Api::sendMessage($channelId, ['content' => $msg]);
         }
 
-        return self::ephemeral("Goal unpaused and check-in recorded!");
+        return "Goal unpaused and check-in recorded!";
     }
 
-    private static function handleUnpauseGoing(array $goal, ?string $channelId, array $vars): array
+    private static function handleUnpauseGoing(array $goal, ?string $channelId, array $vars): string
     {
         Database::execute(
             "UPDATE goals SET status = 'active' WHERE id = :id",
@@ -146,10 +152,10 @@ class Pause
             Api::sendMessage($channelId, ['content' => $msg]);
         }
 
-        return self::ephemeral("Goal unpaused! Check-ins will resume at your usual time.");
+        return "Goal unpaused! Check-ins will resume at your usual time.";
     }
 
-    private static function handleCancel(array $goal, ?string $channelId, array $vars): array
+    private static function handleCancel(array $goal, ?string $channelId, array $vars): string
     {
         Database::execute(
             "UPDATE goals SET status = 'cancelled', cancelled_at = NOW() WHERE id = :id",
@@ -161,7 +167,7 @@ class Pause
             Api::sendMessage($channelId, ['content' => $msg]);
         }
 
-        return self::ephemeral("Goal cancelled.");
+        return "Goal cancelled.";
     }
 
     private static function ephemeral(string $content): array
@@ -169,6 +175,31 @@ class Pause
         return [
             'type' => Types::CHANNEL_MESSAGE_WITH_SOURCE,
             'data' => ['content' => $content, 'flags' => Types::FLAG_EPHEMERAL],
+        ];
+    }
+
+    private static function updateAndEphemeral(array $interaction, string $content): array
+    {
+        $appId = $interaction['application_id'] ?? '';
+        $token = $interaction['token'] ?? '';
+        if ($appId && $token && $content !== '') {
+            try {
+                Api::followUp($appId, $token, [
+                    'content' => $content,
+                    'flags'   => Types::FLAG_EPHEMERAL,
+                ]);
+            } catch (\Throwable $e) {
+                error_log("Failed to send ephemeral follow-up: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'type' => Types::UPDATE_MESSAGE,
+            'data' => [
+                'content'    => $interaction['message']['content'] ?? '',
+                'embeds'     => $interaction['message']['embeds'] ?? [],
+                'components' => [],
+            ],
         ];
     }
 }

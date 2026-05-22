@@ -99,7 +99,7 @@ class Appeal
                 }
             }
 
-            return self::ephemeral("Vote cast! The appeal passed — streak reinstated!");
+            return self::updateAndEphemeral($interaction, "Vote cast! The appeal passed — streak reinstated!");
         }
 
         return self::ephemeral("Vote cast! {$voteCount}/5 votes so far.");
@@ -110,6 +110,31 @@ class Appeal
         return [
             'type' => Types::CHANNEL_MESSAGE_WITH_SOURCE,
             'data' => ['content' => $content, 'flags' => Types::FLAG_EPHEMERAL],
+        ];
+    }
+
+    private static function updateAndEphemeral(array $interaction, string $content): array
+    {
+        $appId = $interaction['application_id'] ?? '';
+        $token = $interaction['token'] ?? '';
+        if ($appId && $token && $content !== '') {
+            try {
+                Api::followUp($appId, $token, [
+                    'content' => $content,
+                    'flags'   => Types::FLAG_EPHEMERAL,
+                ]);
+            } catch (\Throwable $e) {
+                error_log("Failed to send ephemeral follow-up: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'type' => Types::UPDATE_MESSAGE,
+            'data' => [
+                'content'    => $interaction['message']['content'] ?? '',
+                'embeds'     => $interaction['message']['embeds'] ?? [],
+                'components' => [],
+            ],
         ];
     }
 }

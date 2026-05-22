@@ -33,21 +33,25 @@ class CheckIn
         $vars          = ['name' => $displayName, 'goal' => $goal['name'], 'streak' => $goal['streak_count']];
         $needsTzReminder = self::needsTimezoneReminder($userId);
 
-        $response = match ($action) {
+        $msg = match ($action) {
             'checkin_did_it'   => self::handleDidIt($goal, $userId, $guildId, $channelId, $displayName, $vars),
             'checkin_not_yet'  => self::handleNotYet($goal, $channelId, $displayName),
             'checkin_skipping' => self::handleSkipping($goal, $channelId, $vars),
-            default            => self::ephemeral("Unknown action."),
+            default            => null,
         };
 
-        if ($needsTzReminder) {
-            $response['data']['content'] .= "\n\n💡 **Set your timezone** so check-ins happen at the right time for you. Use `/accountabuddy timezone` and pick your city.";
+        if ($msg === null) {
+            return self::ephemeral("Unknown action.");
         }
 
-        return $response;
+        if ($needsTzReminder) {
+            $msg .= "\n\n💡 **Set your timezone** so check-ins happen at the right time for you. Use `/accountabuddy timezone` and pick your city.";
+        }
+
+        return self::updateAndEphemeral($interaction, $msg);
     }
 
-    private static function handleDidIt(array $goal, string $userId, string $guildId, ?string $channelId, string $displayName, array $vars): array
+    private static function handleDidIt(array $goal, string $userId, string $guildId, ?string $channelId, string $displayName, array $vars): string
     {
         // Mark latest pending check-in as complete
         $checkin = Database::fetch(
@@ -129,10 +133,10 @@ class CheckIn
             self::checkMilestone($goal, $newStreak, $channelId, $displayName);
         }
 
-        return self::ephemeral("Logged! Great work on **{$goal['name']}**.");
+        return "Logged! Great work on **{$goal['name']}**.";
     }
 
-    private static function handleNotYet(array $goal, ?string $channelId, string $displayName): array
+    private static function handleNotYet(array $goal, ?string $channelId, string $displayName): string
     {
         // Mark escalation pending — EscalationRunner will fire in 4h
         Database::execute(
@@ -150,10 +154,10 @@ class CheckIn
             ]);
         }
 
-        return self::ephemeral("Noted! We'll follow up in 4 hours.");
+        return "Noted! We'll follow up in 4 hours.";
     }
 
-    private static function handleSkipping(array $goal, ?string $channelId, array $vars): array
+    private static function handleSkipping(array $goal, ?string $channelId, array $vars): string
     {
         // Mark as skipped = miss
         Database::execute(
@@ -177,7 +181,7 @@ class CheckIn
             Api::sendMessage($channelId, ['content' => $msg]);
         }
 
-        return self::ephemeral("Skip recorded.");
+        return "Skip recorded.";
     }
 
     private static function isComeback(int|string $goalId): bool
@@ -267,6 +271,31 @@ class CheckIn
         return [
             'type' => Types::CHANNEL_MESSAGE_WITH_SOURCE,
             'data' => ['content' => $content, 'flags' => Types::FLAG_EPHEMERAL],
+        ];
+    }
+
+    private static function updateAndEphemeral(array $interaction, string $content): array
+    {
+        $appId = $interaction['application_id'] ?? '';
+        $token = $interaction['token'] ?? '';
+        if ($appId && $token && $content !== '') {
+            try {
+                Api::followUp($appId, $token, [
+                    'content' => $content,
+                    'flags'   => Types::FLAG_EPHEMERAL,
+                ]);
+            } catch (\Throwable $e) {
+                error_log("Failed to send ephemeral follow-up: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'type' => Types::UPDATE_MESSAGE,
+            'data' => [
+                'content'    => $interaction['message']['content'] ?? '',
+                'embeds'     => $interaction['message']['embeds'] ?? [],
+                'components' => [],
+            ],
         ];
     }
 }

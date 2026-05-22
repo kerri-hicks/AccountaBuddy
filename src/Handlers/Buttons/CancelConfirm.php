@@ -22,7 +22,7 @@ class CancelConfirm
         }
 
         if ($action === 'cancel_abort') {
-            return self::ephemeral("Cancellation aborted. Goal is still active.");
+            return self::updateAndEphemeral($interaction, "Cancellation aborted. Goal is still active.");
         }
 
         // cancel_confirm
@@ -41,7 +41,7 @@ class CancelConfirm
             Api::sendMessage($channelId, ['content' => $msg]);
         }
 
-        return self::ephemeral("Goal **{$goal['name']}** has been cancelled.");
+        return self::updateAndEphemeral($interaction, "Goal **{$goal['name']}** has been cancelled.");
     }
 
     private static function ephemeral(string $content): array
@@ -49,6 +49,31 @@ class CancelConfirm
         return [
             'type' => Types::CHANNEL_MESSAGE_WITH_SOURCE,
             'data' => ['content' => $content, 'flags' => Types::FLAG_EPHEMERAL],
+        ];
+    }
+
+    private static function updateAndEphemeral(array $interaction, string $content): array
+    {
+        $appId = $interaction['application_id'] ?? '';
+        $token = $interaction['token'] ?? '';
+        if ($appId && $token && $content !== '') {
+            try {
+                Api::followUp($appId, $token, [
+                    'content' => $content,
+                    'flags'   => Types::FLAG_EPHEMERAL,
+                ]);
+            } catch (\Throwable $e) {
+                error_log("Failed to send ephemeral follow-up: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'type' => Types::UPDATE_MESSAGE,
+            'data' => [
+                'content'    => $interaction['message']['content'] ?? '',
+                'embeds'     => $interaction['message']['embeds'] ?? [],
+                'components' => [],
+            ],
         ];
     }
 }
