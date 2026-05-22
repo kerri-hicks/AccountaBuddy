@@ -217,13 +217,15 @@ class CheckIn
                 365 => '1 year',
                 default => "{$days} days",
             };
-            $vars = ['name' => $displayName, 'goal' => $goal['name']];
-            $msg  = Library::get($goal['personality'], 'milestone', $vars);
-
-            $header = Library::milesHeader() . " — **{$goal['name']}**";
-            $msgLines = explode("\n", $msg);
-            array_shift($msgLines);
-            $body = implode("\n", $msgLines);
+            $personalityIcon = match ($goal['personality']) {
+                Types::PERSONALITY_HYPE      => '🔥📣',
+                Types::PERSONALITY_DRY       => '📈📊',
+                Types::PERSONALITY_SARCASTIC => '👀🦊',
+                Types::PERSONALITY_HARSH     => '🗿💀',
+                default                      => '',
+            };
+            $header = Library::milesHeader($personalityIcon) . "\n***{$goal['name']}***";
+            $body = Library::getMessageOnly($goal['personality'], 'milestone', $vars);
 
             Api::sendMessage($channelId, [
                 'content' => $header . "\n"

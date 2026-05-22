@@ -59,7 +59,7 @@ class EscalationRunner
                     default                      => '',
                 };
 
-                $header = Library::milesHeader($personalityIcon) . " — **{$checkin['goal_name']}**";
+                $header = Library::milesHeader($personalityIcon) . "\n***{$checkin['goal_name']}***";
                 $body   = $msgs[$nextPersonality] ?? "Hey <@{$checkin['user_id']}>, still waiting on your check-in.";
                 $content = $header . "\n" . $body;
 
@@ -201,7 +201,7 @@ class EscalationRunner
             Types::PERSONALITY_HARSH     => '🗿💀',
             default                      => '',
         };
-        $header = Library::milesHeader($personalityIcon) . " — **{$checkin['goal_name']}**";
+        $header = Library::milesHeader($personalityIcon) . "\n***{$checkin['goal_name']}***";
 
         // Aggressive public callout
         $callout = $header . "\n"

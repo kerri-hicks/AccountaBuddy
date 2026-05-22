@@ -86,10 +86,8 @@ class Appeal
                         Types::PERSONALITY_HARSH     => '🗿💀',
                         default                      => '',
                     };
-                    $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
-                    $msgLines = explode("\n", $msg);
-                    array_shift($msgLines);
-                    $body = implode("\n", $msgLines);
+                    $header = Library::milesHeader($personalityIcon) . "\n***{$goal['name']}***";
+                    $body = Library::getMessageOnly($goal['personality'], 'comeback', ['name' => $name, 'goal' => $goal['name']]);
 
                     Api::sendMessage($channelId, [
                         'content' => $header . "\n"

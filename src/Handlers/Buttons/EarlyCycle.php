@@ -81,7 +81,7 @@ class EarlyCycle
                 Types::PERSONALITY_HARSH     => '🗿💀',
                 default                      => '',
             };
-            $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
+            $header = Library::milesHeader($personalityIcon) . "\n***{$goal['name']}***";
             Api::sendMessage($channelId, [
                 'content' => $header . "\n"
                            . "🔄 {$displayName} started a new cycle early! Fresh slate, same energy.",
@@ -106,7 +106,7 @@ class EarlyCycle
                 Types::PERSONALITY_HARSH     => '🗿💀',
                 default                      => '',
             };
-            $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
+            $header = Library::milesHeader($personalityIcon) . "\n***{$goal['name']}***";
             Api::sendMessage($channelId, [
                 'content' => $header . "\n"
                            . "⏳ {$displayName} is finishing out the current cycle. Daily check-ins continue!",

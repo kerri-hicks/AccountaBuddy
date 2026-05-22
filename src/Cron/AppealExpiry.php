@@ -54,7 +54,7 @@ class AppealExpiry
             Types::PERSONALITY_HARSH     => '🗿💀',
             default                      => '',
         };
-        $header = Library::milesHeader($personalityIcon) . " — **{$appeal['goal_name']}**";
+        $header = Library::milesHeader($personalityIcon) . "\n***{$appeal['goal_name']}***";
 
         if ($voteCount >= 5) {
             // Approved
@@ -67,10 +67,7 @@ class AppealExpiry
                 [':id' => $appeal['goal_id']]
             );
 
-            $msg = Library::get($appeal['personality'], 'comeback', $vars);
-            $msgLines = explode("\n", $msg);
-            array_shift($msgLines);
-            $body = implode("\n", $msgLines);
+            $body = Library::getMessageOnly($appeal['personality'], 'comeback', $vars);
 
             Api::sendMessage($channelId, [
                 'content' => $header . "\n"

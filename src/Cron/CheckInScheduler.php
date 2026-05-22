@@ -154,10 +154,9 @@ class CheckInScheduler
             default                      => '',
         };
 
-        $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
+        $header = Library::milesHeader($personalityIcon) . "\n***{$goal['name']}***";
         $content = $header . "\n"
-                 . "Time to check in, <@{$goal['user_id']}>!\n"
-                 . "Goal: **{$goal['name']}**"
+                 . "Time to check in, <@{$goal['user_id']}>!"
                  . $streakLine;
 
         $posted = Api::sendMessage($channelId, [

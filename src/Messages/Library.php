@@ -556,30 +556,15 @@ class Library
      */
     public static function milesHeader(string $personalityIcon = ''): string
     {
-        $prefix = $personalityIcon ? $personalityIcon . ' ' : '';
-        return $prefix . Types::MILES_EMOJI . ' **Miles**';
+        $suffix = $personalityIcon ? ' — ' . $personalityIcon : '';
+        return Types::MILES_EMOJI . ' **Miles**' . $suffix;
     }
 
-    public static function get(string $personality, string $event, array $vars = []): string
+    public static function getMessageOnly(string $personality, string $event, array $vars = []): string
     {
         $pool = self::$messages[$personality][$event] ?? null;
-        
-        $personalityIcon = match ($personality) {
-            Types::PERSONALITY_HYPE      => '🔥📣',
-            Types::PERSONALITY_DRY       => '📈📊',
-            Types::PERSONALITY_SARCASTIC => '👀🦊',
-            Types::PERSONALITY_HARSH     => '🗿💀',
-            default                      => '',
-        };
-
-        $iconPrefix = $personalityIcon ? $personalityIcon . ' ' : '';
-
         if (!$pool) {
-            $header = self::milesHeader();
-            if (!empty($vars['goal'])) {
-                $header .= " — **" . $vars['goal'] . "**";
-            }
-            return $header . "\n" . $iconPrefix . "Check-in recorded for {$vars['name']}.";
+            return '';
         }
 
         $count = count($pool);
@@ -591,11 +576,33 @@ class Library
             $message = $pool[array_rand($pool)];
         }
 
-        $header  = self::milesHeader();
-        if (!empty($vars['goal']) && !str_contains($message, '{goal}')) {
-            $header .= " — **" . $vars['goal'] . "**";
+        return self::substitute($message, $vars);
+    }
+
+    public static function get(string $personality, string $event, array $vars = []): string
+    {
+        $personalityIcon = match ($personality) {
+            Types::PERSONALITY_HYPE      => '🔥📣',
+            Types::PERSONALITY_DRY       => '📈📊',
+            Types::PERSONALITY_SARCASTIC => '👀🦊',
+            Types::PERSONALITY_HARSH     => '🗿💀',
+            default                      => '',
+        };
+
+        $header = self::milesHeader($personalityIcon);
+
+        $message = self::getMessageOnly($personality, $event, $vars);
+        if ($message === '') {
+            if (!empty($vars['goal'])) {
+                $header .= "\n***" . $vars['goal'] . "***";
+            }
+            return $header . "\nCheck-in recorded for " . ($vars['name'] ?? 'User') . ".";
         }
-        return $header . "\n" . $iconPrefix . self::substitute($message, $vars);
+
+        if (!empty($vars['goal']) && !str_contains($message, '{goal}')) {
+            $header .= "\n***" . $vars['goal'] . "***";
+        }
+        return $header . "\n" . $message;
     }
 
     private static function substitute(string $template, array $vars): string

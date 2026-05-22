@@ -71,7 +71,7 @@ class GoalAppeal
             Types::PERSONALITY_HARSH     => '🗿💀',
             default                      => '',
         };
-        $header = Library::milesHeader($personalityIcon) . " — **{$goal['name']}**";
+        $header = Library::milesHeader($personalityIcon) . "\n***{$goal['name']}***";
 
         $msg = $header . "\n"
              . "**{$displayName}** is appealing a broken streak!\n"
