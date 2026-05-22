@@ -21,8 +21,47 @@ if (file_exists(__DIR__ . '/.env')) {
 use AccountaBuddy\Config;
 use AccountaBuddy\Discord\Api;
 
-$guildId  = $argv[1] ?? null;
+$arg1     = $argv[1] ?? null;
+$arg2     = $argv[2] ?? null;
 $appId    = Config::appId();
+
+if ($arg1 === 'clear') {
+    if (!$arg2) {
+        echo "Usage: php register-commands.php clear <guild_id>\n";
+        exit(1);
+    }
+    $guildId = $arg2;
+    $url = "https://discord.com/api/v10/applications/{$appId}/guilds/{$guildId}/commands";
+    echo "Clearing guild commands for guild {$guildId}...\n";
+    try {
+        $ctx = stream_context_create([
+            'http' => [
+                'method'        => 'PUT',
+                'header'        => implode("\r\n", [
+                    'Content-Type: application/json',
+                    'Authorization: Bot ' . Config::botToken(),
+                    'User-Agent: AccountaBuddy/1.0',
+                ]),
+                'content'       => json_encode([]),
+                'ignore_errors' => true,
+            ],
+        ]);
+        $result = file_get_contents($url, false, $ctx);
+        $status = (int)(explode(' ', $http_response_header[0])[1] ?? 0);
+        if ($status >= 200 && $status < 300) {
+            echo "✅ Successfully cleared guild commands for {$guildId}\n";
+        } else {
+            echo "❌ Failed to clear guild commands ({$status}):\n{$result}\n";
+            exit(1);
+        }
+    } catch (\Throwable $e) {
+        echo "❌ Error: {$e->getMessage()}\n";
+        exit(1);
+    }
+    exit(0);
+}
+
+$guildId = $arg1;
 
 $commands = [
     [
@@ -137,6 +176,37 @@ if ($guildId) {
 } else {
     $path = "/applications/{$appId}/commands";
     echo "Registering global commands (may take up to 1 hour to propagate)...\n";
+
+    // Auto-clear guild commands for any guilds in server_config to prevent duplication
+    try {
+        $guilds = \AccountaBuddy\Database::fetchAll("SELECT guild_id FROM server_config");
+        foreach ($guilds as $g) {
+            $gId = $g['guild_id'];
+            $clearUrl = "https://discord.com/api/v10/applications/{$appId}/guilds/{$gId}/commands";
+            $clearCtx = stream_context_create([
+                'http' => [
+                    'method'        => 'PUT',
+                    'header'        => implode("\r\n", [
+                        'Content-Type: application/json',
+                        'Authorization: Bot ' . Config::botToken(),
+                        'User-Agent: AccountaBuddy/1.0',
+                    ]),
+                    'content'       => json_encode([]),
+                    'ignore_errors' => true,
+                ],
+            ]);
+            $clearRes = file_get_contents($clearUrl, false, $clearCtx);
+            $clearStatus = (int)(explode(' ', $http_response_header[0])[1] ?? 0);
+            if ($clearStatus >= 200 && $clearStatus < 300) {
+                echo "✅ Automatically cleared legacy guild commands for guild {$gId}\n";
+            } else {
+                echo "⚠️ Failed to clear guild commands for guild {$gId} ({$clearStatus}): {$clearRes}\n";
+            }
+        }
+    } catch (\Throwable $e) {
+        // Gracefully ignore if database isn't configured/accessible (e.g. running locally without env vars)
+        echo "ℹ️ Skipped auto-clearing guild commands (database or environment not loaded/accessible: " . $e->getMessage() . ")\n";
+    }
 }
 
 try {

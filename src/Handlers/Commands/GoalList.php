@@ -26,7 +26,7 @@ class GoalList
             return [
                 'type' => Types::CHANNEL_MESSAGE_WITH_SOURCE,
                 'data' => [
-                    'content' => "You have no active goals. Use `/goal-ABuddy new` to create one.",
+                    'content' => "You have no active goals. Use `/goal-abuddy new` to create one.",
                     'flags'   => Types::FLAG_EPHEMERAL,
                 ],
             ];

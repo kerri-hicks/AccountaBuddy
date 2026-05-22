@@ -30,7 +30,7 @@ class GoalView
             return [
                 'type' => Types::CHANNEL_MESSAGE_WITH_SOURCE,
                 'data' => [
-                    'content' => "Goal not found. Use `/goal-ABuddy list` to see your goals.",
+                    'content' => "Goal not found. Use `/goal-abuddy list` to see your goals.",
                     'flags'   => Types::FLAG_EPHEMERAL,
                 ],
             ];

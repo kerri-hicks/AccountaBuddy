@@ -25,7 +25,7 @@ class GoalPause
         $goal = GoalView::findGoal($userId, $guildId, $goalArg);
 
         if (!$goal) {
-            return self::ephemeral("Goal not found. Use `/goal-ABuddy list` to see your goals.");
+            return self::ephemeral("Goal not found. Use `/goal-abuddy list` to see your goals.");
         }
 
         if ($goal['cadence_type'] === Types::CADENCE_ONE_TIME) {
