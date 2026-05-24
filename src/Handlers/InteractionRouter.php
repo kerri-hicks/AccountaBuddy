@@ -90,8 +90,8 @@ class InteractionRouter
             in_array($action, ['cancel_confirm', 'cancel_abort'], true)
                 => CancelConfirm::handle($this->interaction, $action, $param1),
 
-            // Early cycle
-            in_array($action, ['early_new_cycle', 'early_finish_out'], true)
+            // Early / Miss cycle
+            in_array($action, ['early_new_cycle', 'early_finish_out', 'miss_new_cycle', 'miss_continue'], true)
                 => EarlyCycle::handle($this->interaction, $action, $param1),
 
             // Hold DM buttons

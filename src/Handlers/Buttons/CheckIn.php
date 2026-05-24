@@ -124,7 +124,8 @@ class CheckIn
         // Check milestones (after streak update happens in CycleEvaluator for cadenced goals;
         // for daily goals, update streak immediately)
         if ($goal['cadence_type'] === Types::CADENCE_DAILY) {
-            $newStreak = (int)$goal['streak_count'] + 1;
+            $isComeback = self::isComeback($goal['id']);
+            $newStreak = $isComeback ? 1 : (int)$goal['streak_count'] + 1;
             $newBest   = max($newStreak, (int)$goal['streak_best']);
             Database::execute(
                 "UPDATE goals SET streak_count = :s, streak_best = :b WHERE id = :id",
@@ -169,11 +170,7 @@ class CheckIn
             [':gid' => $goal['id']]
         );
 
-        // Break streak
-        Database::execute(
-            "UPDATE goals SET streak_count = 0 WHERE id = :id",
-            [':id' => $goal['id']]
-        );
+        // Skip does not reset the streak immediately (it stays intact until next check-in or cycle reset)
 
         if ($channelId) {
             $prefix = "**{$vars['name']}** skipped " . self::cadenceLabel($goal['cadence_type']) . " check-in for **{$goal['name']}**.";

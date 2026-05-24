@@ -126,18 +126,45 @@ class EscalationRunner
                     continue;
                 }
 
-                // Daily goals: standard public miss logic and streak break
+                // Daily goals: standard public miss logic but keep streak intact for DM prompt decision
                 // Mark missed
                 Database::execute(
                     "UPDATE checkins SET status = 'missed', escalation_level = 2, responded_at = NOW() WHERE id = :id",
                     [':id' => $checkin['id']]
                 );
 
-                // Break streak
-                Database::execute(
-                    "UPDATE goals SET streak_count = 0 WHERE id = :id",
-                    [':id' => $checkin['goal_id']]
+                // Fetch cycle info to show current completions/30
+                $cycle = Database::fetch(
+                    "SELECT completions, target FROM cycles WHERE goal_id = :gid AND status = 'active' ORDER BY start_date DESC LIMIT 1",
+                    [':gid' => $checkin['goal_id']]
                 );
+                $completions = $cycle ? (int)$cycle['completions'] : 0;
+                $target = $cycle ? (int)$cycle['target'] : 30;
+
+                try {
+                    Api::sendDm($checkin['user_id'], [
+                        'content' => "🚨 You missed your daily check-in today for **{$checkin['goal_name']}**! This means you won't be able to reach your {$target}-day goal for this cycle.\n\nWould you like to continue this cycle (with your current progress of {$completions}/{$target}), or start a new cycle?",
+                        'components' => [[
+                            'type' => Types::COMPONENT_ACTION_ROW,
+                            'components' => [
+                                [
+                                    'type' => Types::COMPONENT_BUTTON,
+                                    'style' => Types::BUTTON_PRIMARY,
+                                    'label' => '🔄 Start a new cycle',
+                                    'custom_id' => "miss_new_cycle:{$checkin['goal_id']}",
+                                ],
+                                [
+                                    'type' => Types::COMPONENT_BUTTON,
+                                    'style' => Types::BUTTON_SECONDARY,
+                                    'label' => '⏳ Continue this cycle',
+                                    'custom_id' => "miss_continue:{$checkin['goal_id']}",
+                                ],
+                            ],
+                        ]],
+                    ]);
+                } catch (\Throwable $e) {
+                    error_log("Failed to send daily miss DM to {$checkin['user_id']}: " . $e->getMessage());
+                }
 
                 $vars = [
                     'name'   => $checkin['display_name'],

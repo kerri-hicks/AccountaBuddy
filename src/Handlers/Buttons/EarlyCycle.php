@@ -27,9 +27,10 @@ class EarlyCycle
         $displayName = Api::resolveDisplayName($interaction);
 
         $msg = match ($action) {
-            'early_new_cycle'   => self::handleNewCycle($goal, $channelId, $displayName),
-            'early_finish_out'  => self::handleFinishOut($goal, $channelId, $displayName),
-            default             => null,
+            'early_new_cycle', 'miss_new_cycle' => self::handleNewCycle($goal, $channelId, $displayName, $action === 'miss_new_cycle'),
+            'early_finish_out'                  => self::handleFinishOut($goal, $channelId, $displayName),
+            'miss_continue'                     => self::handleMissContinue($goal),
+            default                             => null,
         };
 
         if ($msg === null) {
@@ -39,22 +40,23 @@ class EarlyCycle
         return self::updateAndEphemeral($interaction, $msg);
     }
 
-    private static function handleNewCycle(array $goal, ?string $channelId, string $displayName): string
+    private static function handleNewCycle(array $goal, ?string $channelId, string $displayName, bool $isMiss = false): string
     {
-        // Close current cycle as completed
+        // Close current cycle
         $cycle = Database::fetch(
             "SELECT * FROM cycles WHERE goal_id = :gid AND status = 'active' ORDER BY start_date DESC LIMIT 1",
             [':gid' => $goal['id']]
         );
 
         if ($cycle) {
+            $status = $isMiss ? 'missed' : 'completed';
             Database::execute(
-                "UPDATE cycles SET status = 'completed', end_date = CURRENT_DATE WHERE id = :id",
-                [':id' => $cycle['id']]
+                "UPDATE cycles SET status = :status, end_date = CURRENT_DATE WHERE id = :id",
+                [':status' => $status, ':id' => $cycle['id']]
             );
 
-            // Update streak
-            $newStreak = (int)$goal['streak_count'] + 1;
+            // Update streak: if it's a miss, reset streak to 0, otherwise increment
+            $newStreak = $isMiss ? 0 : (int)$goal['streak_count'] + 1;
             $newBest   = max($newStreak, (int)$goal['streak_best']);
             Database::execute(
                 "UPDATE goals SET streak_count = :s, streak_best = :b, cycle_start_date = CURRENT_DATE WHERE id = :id",
@@ -82,13 +84,22 @@ class EarlyCycle
                 default                      => '',
             };
             $header = Library::milesHeader($personalityIcon) . "\n***{$goal['name']}***";
+            $announcement = $isMiss
+                ? "🔄 {$displayName} started a new daily cycle after a miss! Fresh slate, same energy."
+                : "🔄 {$displayName} started a new cycle early! Fresh slate, same energy.";
             Api::sendMessage($channelId, [
-                'content' => $header . "\n"
-                           . "🔄 {$displayName} started a new cycle early! Fresh slate, same energy.",
+                'content' => $header . "\n" . $announcement,
             ]);
         }
 
-        return "New cycle started! Keep the momentum going.";
+        return $isMiss
+            ? "New daily cycle started! Clean slate, let's build that streak back up."
+            : "New cycle started! Keep the momentum going.";
+    }
+
+    private static function handleMissContinue(array $goal): string
+    {
+        return "Got it! Continuing the current cycle. Your daily check-ins will continue.";
     }
 
     private static function handleFinishOut(array $goal, ?string $channelId, string $displayName): string
