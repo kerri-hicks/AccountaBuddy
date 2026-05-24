@@ -123,7 +123,7 @@ class GoalCreate
                 'goal_id'     => $goalId,
                 'start_date'  => gmdate('Y-m-d'),
                 'end_date'    => $cycleEnd,
-                'target'      => $cadenceTarget,
+                'target'      => $cadenceType === Types::CADENCE_DAILY ? 30 : $cadenceTarget,
                 'completions' => 0,
                 'status'      => Types::CYCLE_ACTIVE,
             ]);

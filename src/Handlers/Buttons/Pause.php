@@ -72,7 +72,7 @@ class Pause
                     'goal_id'     => $goal['id'],
                     'start_date'  => $today,
                     'end_date'    => $cycleEnd,
-                    'target'      => $goal['cadence_target'],
+                    'target'      => $goal['cadence_type'] === Types::CADENCE_DAILY ? 30 : $goal['cadence_target'],
                     'completions' => 0,
                     'status'      => Types::CYCLE_ACTIVE,
                 ]);
@@ -140,7 +140,7 @@ class Pause
                     'goal_id'     => $goal['id'],
                     'start_date'  => $today,
                     'end_date'    => $cycleEnd,
-                    'target'      => $goal['cadence_target'],
+                    'target'      => $goal['cadence_type'] === Types::CADENCE_DAILY ? 30 : $goal['cadence_target'],
                     'completions' => 0,
                     'status'      => Types::CYCLE_ACTIVE,
                 ]);

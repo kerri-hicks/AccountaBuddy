@@ -45,51 +45,62 @@ class CycleEvaluator
     {
         $hit     = (int)$cycle['completions'] >= (int)$cycle['target'];
         $goalId  = $cycle['goal_id'];
+        $isDaily = $cycle['cadence_type'] === Types::CADENCE_DAILY;
 
-        if ($hit) {
-            // Update streak
-            $newStreak = (int)$cycle['streak_count'] + 1;
-            $newBest   = max($newStreak, (int)$cycle['streak_best']);
-
+        if ($isDaily) {
+            // Daily goals manage streaks in real-time (daily).
+            // Just mark the cycle as completed/missed without modifying the goal streak.
+            $status = $hit ? 'completed' : 'missed';
             Database::execute(
-                "UPDATE goals SET streak_count = :s, streak_best = :b WHERE id = :id",
-                [':s' => $newStreak, ':b' => $newBest, ':id' => $goalId]
-            );
-            Database::execute(
-                "UPDATE cycles SET status = 'completed' WHERE id = :id",
-                [':id' => $cycle['id']]
-            );
-
-            // Check milestone
-            $fakeGoal = [
-                'id'          => $goalId,
-                'personality' => $cycle['personality'],
-                'name'        => $cycle['goal_name'],
-                'cadence_type'=> $cycle['cadence_type'],
-                'streak_count'=> $newStreak,
-                'streak_best' => $newBest,
-            ];
-            CheckInHandler::checkMilestone(
-                $fakeGoal,
-                $newStreak,
-                $cycle['accountability_channel_id'],
-                $cycle['display_name']
+                "UPDATE cycles SET status = :status WHERE id = :id",
+                [':status' => $status, ':id' => $cycle['id']]
             );
         } else {
-            // Miss: break streak
-            Database::execute(
-                "UPDATE goals SET streak_count = 0 WHERE id = :id",
-                [':id' => $goalId]
-            );
-            Database::execute(
-                "UPDATE cycles SET status = 'missed' WHERE id = :id",
-                [':id' => $cycle['id']]
-            );
+            if ($hit) {
+                // Update streak
+                $newStreak = (int)$cycle['streak_count'] + 1;
+                $newBest   = max($newStreak, (int)$cycle['streak_best']);
 
-            if ((int)$cycle['streak_count'] > 0 && $cycle['accountability_channel_id']) {
-                $vars = ['name' => $cycle['display_name'], 'goal' => $cycle['goal_name']];
-                $msg  = Library::get($cycle['personality'], 'streak_break', $vars);
-                Api::sendMessage($cycle['accountability_channel_id'], ['content' => $msg]);
+                Database::execute(
+                    "UPDATE goals SET streak_count = :s, streak_best = :b WHERE id = :id",
+                    [':s' => $newStreak, ':b' => $newBest, ':id' => $goalId]
+                );
+                Database::execute(
+                    "UPDATE cycles SET status = 'completed' WHERE id = :id",
+                    [':id' => $cycle['id']]
+                );
+
+                // Check milestone
+                $fakeGoal = [
+                    'id'          => $goalId,
+                    'personality' => $cycle['personality'],
+                    'name'        => $cycle['goal_name'],
+                    'cadence_type'=> $cycle['cadence_type'],
+                    'streak_count'=> $newStreak,
+                    'streak_best' => $newBest,
+                ];
+                CheckInHandler::checkMilestone(
+                    $fakeGoal,
+                    $newStreak,
+                    $cycle['accountability_channel_id'],
+                    $cycle['display_name']
+                );
+            } else {
+                // Miss: break streak
+                Database::execute(
+                    "UPDATE goals SET streak_count = 0 WHERE id = :id",
+                    [':id' => $goalId]
+                );
+                Database::execute(
+                    "UPDATE cycles SET status = 'missed' WHERE id = :id",
+                    [':id' => $cycle['id']]
+                );
+
+                if ((int)$cycle['streak_count'] > 0 && $cycle['accountability_channel_id']) {
+                    $vars = ['name' => $cycle['display_name'], 'goal' => $cycle['goal_name']];
+                    $msg  = Library::get($cycle['personality'], 'streak_break', $vars);
+                    Api::sendMessage($cycle['accountability_channel_id'], ['content' => $msg]);
+                }
             }
         }
 

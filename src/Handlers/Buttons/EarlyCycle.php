@@ -67,7 +67,7 @@ class EarlyCycle
                 'goal_id'    => $goal['id'],
                 'start_date' => date('Y-m-d'),
                 'end_date'   => $newEnd,
-                'target'     => $goal['cadence_target'],
+                'target'     => $goal['cadence_type'] === Types::CADENCE_DAILY ? 30 : $goal['cadence_target'],
                 'completions' => 0,
                 'status'     => Types::CYCLE_ACTIVE,
             ]);
